@@ -1,0 +1,22 @@
+# AGNI files
+AGNI/
+
+# atmospheres
+res/atmospheres/
+atmos_list.toml
+
+# automatically generated config files
+res/config/
+
+# Output files
+out/*
+runtime.sf
+runtime.sf_k
+socstar.dat
+
+# Misc files
+.DS_Store
+__pycache__
+debug/
+nogit*
+.osfcli.config

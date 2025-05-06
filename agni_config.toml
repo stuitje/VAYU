@@ -1,0 +1,17 @@
+[paths]
+# Base AGNI directory (used to access the model engine)
+agni_dir = "AGNI"
+
+# Input files and directories 
+planet_csv = "res/planetary_data/exoplanetarchive.csv"
+obs_data_dir = "res/planetary_data"
+atmosphere_dir = "res/atmospheres"
+surface_dir = "res/surfaces"
+stellar_spectra_dir = "res/stellar_spectra"
+
+# AGNI input files 
+spectral_file = "AGNI/res/spectral_files/Honeyside/256/Honeyside.sf"
+
+# Outputs
+output_dir = "out"
+config_dir = "res/config"
