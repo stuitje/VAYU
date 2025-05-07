@@ -39,6 +39,7 @@ VAYU/
 │   ├── pipeline.py           # Main orchestration script
 │   ├── plots.py              # Plotting utilities
 │   ├── temperature_fit.py    # Fit temperature to observational data
+│   ├── throughput.py         # Calculate JWST Miri filter throughput for simulated emission
 │   └── utils.py              # Math + I/O helpers (Planck, contrast, etc.)
 │
 ├── agni_config.toml          # Paths to directories
