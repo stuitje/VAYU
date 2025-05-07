@@ -77,8 +77,8 @@ def write_agni_config(
     # Atmosphere
     atmo_path = os.path.join(CONFIG["atmosphere_dir"], f"{atmosphere_name}.toml")
     p_surf, p_top, vmr_dict, transparent = load_atmosphere_toml(atmo_path)
-    solver = "transparent" if transparent else ""
-    solution = 1 if transparent else 0
+    solver = "transparent" if transparent else "newton"
+    solution = 1 #if transparent else 0
 
     # Surface
     surface_path = os.path.join(CONFIG["surface_dir"], f"{surface_name}.dat")
@@ -152,7 +152,7 @@ def write_agni_config(
     exec_["clean_output"] = True
     exec_["verbosity"] = 1
     exec_["max_steps"] = 20000
-    exec_["max_runtime"] = 400
+    exec_["max_runtime"] = 1000
     exec_["num_levels"] = 200
     exec_["continua"] = True
     exec_["rayleigh"] = True
