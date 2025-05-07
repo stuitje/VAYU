@@ -86,7 +86,7 @@ def load_agni_output(nc_path: str) -> dict:
     }
 
 def compute_equilibrium_temperature(
-    stellar_luminosity_logL: float,
+    stellar_luminosity: float,
     distance_au: float,
     bond_albedo: float = 0.0,
     redistribution_factor: float = 0.5  # 1.0 = full redistribution, 0.5 = dayside only
@@ -95,15 +95,15 @@ def compute_equilibrium_temperature(
     Compute equilibrium temperature with heat redistribution.
 
     Args:
-        stellar_luminosity_logL: log10(L / L_sun)
-        distance_au: orbital distance [AU]
+        stellar_luminosity: log10(L / L_sun)
+        distance_au: orbital distance [au]
         bond_albedo: fraction of light reflected
         redistribution_factor: fractional emitting area 
 
     Returns:
         Equilibrium temperature [K]
     """
-    L_star = 10**stellar_luminosity_logL * l_sun
+    L_star = 10**stellar_luminosity * l_sun
     d_m = distance_au * au
 
     T_eq = ((1 - bond_albedo) * L_star / (16 * np.pi * stefan_boltzmann * d_m**2 * redistribution_factor))**0.25
