@@ -82,7 +82,7 @@ def plot_bandflux_and_contrast(
     ax2.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
     ax2.set_ylabel("Contrast (ppm)", fontsize = 13)
     ax2.set_xlim(0, 14)
-    ax2.set_ylim(0, 200)
+    ax2.set_ylim(0, 400)
     ax2.grid(alpha=0.3)
     ax2.legend()
 
