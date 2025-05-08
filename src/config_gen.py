@@ -77,13 +77,16 @@ def write_agni_config(
     # Atmosphere
     atmo_path = os.path.join(CONFIG["atmosphere_dir"], f"{atmosphere_name}.toml")
     p_surf, p_top, vmr_dict, transparent = load_atmosphere_toml(atmo_path)
-    solver = "transparent" if transparent else "newton"
+    solver = "transparent" if transparent else "gauss"
     solution = 1 #if transparent else 0
 
     # Surface
-    surface_path = os.path.join(CONFIG["surface_dir"], f"{surface_name}.dat")
-    if not os.path.exists(surface_path):
-        raise FileNotFoundError(f"Surface file not found: {surface_path}")
+    if surface_name != 'greybody':
+        surface_path = os.path.join(CONFIG["surface_dir"], f"{surface_name}.dat")
+        if not os.path.exists(surface_path):
+            raise FileNotFoundError(f"Surface file not found: {surface_path}")
+    else:
+        surface_path = surface_name
 
     # Paths
     config_name = f"{planet_name}_{surface_name}_{atmosphere_name}".lower()
@@ -116,7 +119,7 @@ def write_agni_config(
     planet["s0_fact"] = 0.6652
     planet["zenith_angle"] = 0.0
     planet["surface_material"] = surface_path
-    planet["albedo_s"] = 0.3
+    planet["albedo_s"] = 0.0
     planet["radius"] = radius
     planet["gravity"] = gravity
     planet["skin_d"] = 0.01
@@ -153,7 +156,7 @@ def write_agni_config(
     exec_["verbosity"] = 1
     exec_["max_steps"] = 20000
     exec_["max_runtime"] = 1000
-    exec_["num_levels"] = 200
+    exec_["num_levels"] = 50
     exec_["continua"] = True
     exec_["rayleigh"] = True
     exec_["cloud"] = False
