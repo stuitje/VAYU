@@ -29,7 +29,7 @@ VAYU/
 │   ├── config/               # Generated AGNI configuration TOMLs
 │   ├── planetary_data/       # Basic planet data, and observational contrasts
 │   ├── stellar_spectra/      # Stellar spectra files (.txt)
-│   ├── surfaces/             # Surface albedo files (.dat)
+│   └── surfaces/             # Surface albedo files (.dat)
 │
 ├── out/                      # Model results and plots saved here (per planet)
 ├── src/
