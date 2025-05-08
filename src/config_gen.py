@@ -131,7 +131,14 @@ def write_agni_config(
     doc["planet"] = planet
 
     files = table()
-    files["input_sf"] = CONFIG["spectral_file"]
+
+    # Make sure that O2 uses the spectral file that includes O2 opacity
+    if "O2" in atmosphere_name and all(x not in atmosphere_name for x in ["CO2", "SO2"]):
+        spectral_file = CONFIG["spectral_file_O2"]
+    else:
+        spectral_file = CONFIG["spectral_file"]
+
+    files["input_sf"] = spectral_file
     files["input_star"] = input_star
     files["output_dir"] = agni_output_dir
     doc["files"] = files
