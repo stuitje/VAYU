@@ -2,7 +2,7 @@
 AGNI/
 
 # atmospheres
-res/atmospheres/
+res/atmospheres/*.toml
 atmos_list.toml
 
 # automatically generated config files
