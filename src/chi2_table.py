@@ -65,8 +65,8 @@ def write_chi2_table(
 ):
     lines = []
     lines.append(f"Planet: {planet}\n")
-    lines.append("Bare-rock Surfaces        | chi-2   |   Atmospheres             | chi-2   |")
-    lines.append("--------------------------|---------|---------------------------|---------|")
+    lines.append("Bare-rock Surfaces        | chi-2   |   Atmospheres                       | chi-2   |")
+    lines.append("--------------------------|---------|-------------------------------------|---------|")
 
     max_len = max(len(bare_results), len(atmo_results))
     for i in range(max_len):
@@ -76,11 +76,11 @@ def write_chi2_table(
             atmo_key = atmo_results[i][0]
             atmo_label = atmosphere_labels.get(atmo_key, atmo_key)
             clean_label = atmo_label.replace("_", "").replace("$", "")
-            atmo_str = f"{clean_label:<25} | {atmo_results[i][1]:<8.2f}"
+            atmo_str = f"{clean_label:<35} | {atmo_results[i][1]:<8.2f}"
         else:
-            atmo_str = "                          |       "
+            atmo_str = "                                    |       "
 
-        lines.append(f"{bare_str}| {atmo_str:<36}|")
+        lines.append(f"{bare_str}| {atmo_str:<46}|")
 
     path = os.path.join(output_dir, planet, filename)
     os.makedirs(os.path.dirname(path), exist_ok=True)
