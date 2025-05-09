@@ -23,28 +23,24 @@ def get_throughput(wave_um, filter_name):
     return instrument_factory.get_total_eff(wave_um)
 
 def main():
-    # Wavelength range in microns
     wave_um = np.linspace(10.0, 20.0, 1000)
 
-    # Get throughput for F1280W and F1500W
-    efficiency_1280 = get_throughput(wave_um, "f1280w")
-    efficiency_1500 = get_throughput(wave_um, "f1500w")
+    throughput_1280 = get_throughput(wave_um, "f1280w")
+    throughput_1500 = get_throughput(wave_um, "f1500w")
 
-    # Plot
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(wave_um, efficiency_1280, label="F1280W", color="dodgerblue")
-    ax.plot(wave_um, efficiency_1500, label="F1500W", color="crimson")
+    ax.plot(wave_um, throughput_1280, label="F1280W", color="dodgerblue")
+    ax.plot(wave_um, throughput_1500, label="F1500W", color="crimson")
     ax.set_title("JWST MIRI throughput: F1280W and F1500W")
-    ax.set_xlabel(r"Wavelength ($\mu$m)")
+    ax.set_xlabel("Wavelength (µm)")
     ax.set_ylabel("Throughput")
     ax.grid(True, linestyle=":")
     ax.legend()
 
-    # Save
-    out_dir = "out/throughput"
-    os.makedirs(out_dir, exist_ok=True)
-    fig.savefig(os.path.join(out_dir, "miri_f1280w_f1500w_throughput.png"), dpi=300)
-    print(f"Saved plot to {os.path.join(out_dir, 'miri_f1280w_f1500w_throughput.png')}")
+    out_path = "out/throughput/miri_f1280w_f1500w_throughput.png"
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    fig.savefig(out_path, dpi=300)
+    print(f"Saved plot to: {out_path}")
 
 if __name__ == "__main__":
     main()
