@@ -10,7 +10,9 @@ from src.plots import (
     plot_bandflux_and_contrast,
     plot_contrasts_multi_atmosphere,
     plot_contrasts_multi_surface,  
-    load_contrast_data
+    load_contrast_data,
+    plot_surface_albedo,
+    plot_multiple_surface_albedos
 )
 from src.utils import load_agni_output, compute_equilibrium_temperature
 from src.chi2_table import generate_chi2_table, write_chi2_table
@@ -78,6 +80,11 @@ def main():
         surfaces = get_surfaces()
     elif args.surface == "list":
         surfaces = toml.load(os.path.join(ROOT, "..", "surface_list.toml")).get("surfaces", [])
+        plot_multiple_surface_albedos(
+            surface_names=surfaces,
+            surface_dir=CONFIG["surface_dir"],
+            planet_name=args.planet
+        )
     else:
         surfaces = [args.surface]
 
@@ -91,6 +98,12 @@ def main():
 
     # Main AGNI loop
     for surface in surfaces:
+
+        plot_surface_albedo(
+        surface_name=surface,
+        surface_dir=CONFIG["surface_dir"],
+        planet_name=args.planet)
+        
         fluxes = {}
         wavelengths = None
 
@@ -129,7 +142,7 @@ def main():
             else:
                 print(f"[SKIP] No output found: {nc_path}")
 
-        if len(fluxes) > 1 and not flux_mode:
+        if args.atmosphere == "list" and len(fluxes) > 1 and not flux_mode:
             plot_contrasts_multi_atmosphere(
                 flux_dict=fluxes,
                 wavelength_nm=wavelengths,
@@ -143,7 +156,7 @@ def main():
             )
 
     # Multi-surface contrast plot (for single atmosphere)
-    if len(surfaces) > 1 and len(atmospheres) == 1 and not flux_mode:
+    if args.surface == "list" and len(surfaces) > 1 and len(atmospheres) == 1 and not flux_mode:
         surface_fluxes = {}
         wavelengths = None
         atmo = atmospheres[0]

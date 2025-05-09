@@ -81,8 +81,8 @@ def plot_bandflux_and_contrast(
 
     ax2.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
     ax2.set_ylabel("Contrast (ppm)", fontsize = 13)
-    ax2.set_xlim(0, 14)
-    ax2.set_ylim(0, 200)
+    ax2.set_xlim(0, 20)
+    ax2.set_ylim(0, 400)
     ax2.grid(alpha=0.3)
     ax2.legend()
 
@@ -162,8 +162,8 @@ def plot_contrasts_multi_atmosphere(
 
     ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
     ax.set_ylabel("Contrast (ppm)", fontsize = 13)
-    ax.set_xlim(4, 14)
-    ax.set_ylim(0, 200)
+    ax.set_xlim(4, 20)
+    ax.set_ylim(0, 400)
     ax.set_title(f"{planet_name.upper()} — multiple atmospheres ({surface})", fontsize = 15)
     ax.grid(alpha=0.3)
     ax.legend()
@@ -244,8 +244,8 @@ def plot_contrasts_multi_surface(
 
     ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
     ax.set_ylabel("Contrast (ppm)", fontsize=13)
-    ax.set_xlim(4, 14)
-    ax.set_ylim(0, 200)
+    ax.set_xlim(4, 20)
+    ax.set_ylim(0, 400)
     ax.set_title(f"{planet_name.upper()} — multiple bare-rock surfaces", fontsize=15)
     ax.grid(alpha=0.3)
     ax.legend()
@@ -260,4 +260,81 @@ def plot_contrasts_multi_surface(
     else:
         plt.show()
 
+def plot_surface_albedo(surface_name: str, surface_dir: str, planet_name: str):
+    """
+    Plot the raw surface albedo.
+
+    Args:
+        surface_name: Name of the surface (without extension).
+        surface_dir: Directory where .dat files are stored.
+        planet_name: Name of the planet for output path.
+    """
+
+    save_path = os.path.join(CONFIG["output_dir"], planet_name, surface_name, "surface_albedo.png")
+    filepath = os.path.join(surface_dir, f"{surface_name}.dat")
+
+    if os.path.isfile(save_path):
+        print(f"[SKIP] Albedo plot already exists: {save_path}")
+        return
+    
+    if not os.path.isfile(filepath):
+        print(f"[WARNING] Albedo file not found: {filepath}")
+        return
+
+    try:
+        df = pd.read_csv(filepath, sep=r"\s+", names=["wavelength_nm", "albedo"], comment="#", engine="python")
+    except Exception as e:
+        print(f"[ERROR] Failed to read {filepath}: {e}")
+        return
+
+    wavelength_um = df["wavelength_nm"] / 1000
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.plot(wavelength_um, df["albedo"],  color="dodgerblue")
+    ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
+    ax.set_ylabel("Albedo", fontsize=13)
+    ax.set_xlim(wavelength_um.min(), wavelength_um.max())
+    ax.set_ylim(0, 1)
+    ax.set_title(f"{surface_name} — Surface Albedo", fontsize=15)
+    ax.grid(alpha=0.3)
+
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+    print(f"[INFO] Albedo plot saved to {save_path}")
+
+def plot_multiple_surface_albedos(surface_names, surface_dir: str, planet_name: str):
+    """
+    Plot multiple surface albedo curves on one figure.
+    """
+
+    save_path = os.path.join(CONFIG["output_dir"], planet_name, "multiple_surfaces_albedo.png")
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    for surface in surface_names:
+        path = os.path.join(surface_dir, f"{surface}.dat")
+        if not os.path.isfile(path):
+            print(f"[WARN] Missing albedo file: {surface}")
+            continue
+        try:
+            df = pd.read_csv(path, sep=r"\s+", names=["wavelength_nm", "albedo"], comment="#", engine="python")
+            ax.plot(df["wavelength_nm"] / 1000, df["albedo"], label=surface)
+        except Exception as e:
+            print(f"[ERROR] Could not read {surface}: {e}")
+
+    ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
+    ax.set_ylabel("Albedo", fontsize=13)
+    ax.set_title(f"{planet_name.upper()} — Surface Albedos", fontsize=15)
+    ax.set_xlim(0, 20)
+    ax.set_ylim(0, 1)
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=11, ncol=2)
+    plt.tight_layout()
+
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+    plt.savefig(save_path)
+    plt.close()
+    print(f"[INFO] Multiple-surfaces albedo plot saved to {save_path}")
 
