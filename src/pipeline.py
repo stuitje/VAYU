@@ -9,6 +9,7 @@ from src.temperature_fit import fit_planet_temperature
 from src.plots import (
     plot_bandflux_and_contrast,
     plot_contrasts_multi_atmosphere,
+    plot_contrasts_multi_surface,  
     load_contrast_data
 )
 from src.utils import load_agni_output, compute_equilibrium_temperature
@@ -40,7 +41,7 @@ def get_atmospheres():
 def main():
     parser = argparse.ArgumentParser(description="Run AGNI + plot for planet/surface/atmo setup.")
     parser.add_argument("planet")
-    parser.add_argument("-s", "--surface", required=True, help="'all' or surface name")
+    parser.add_argument("-s", "--surface", required=True, help="'all', 'list', or surface name")
     parser.add_argument("-a", "--atmosphere", required=True, help="'all', 'list', or atmosphere name")
     parser.add_argument("--flux", default="false", choices=["true", "false"])
     parser.add_argument("--no-run", action="store_true", help="Skip config + AGNI run and just process existing output.")
@@ -68,11 +69,15 @@ def main():
             redistribution_factor=0.5
         )
 
+    # Handle surface input
     if args.surface == "all":
         surfaces = get_surfaces()
+    elif args.surface == "list":
+        surfaces = toml.load(os.path.join(ROOT, "..", "surface_list.toml")).get("surfaces", [])
     else:
         surfaces = [args.surface]
 
+    # Handle atmosphere input
     if args.atmosphere == "all":
         atmospheres = get_atmospheres()
     elif args.atmosphere == "list":
@@ -80,6 +85,7 @@ def main():
     else:
         atmospheres = [args.atmosphere]
 
+    # Main AGNI loop
     for surface in surfaces:
         fluxes = {}
         wavelengths = None
@@ -98,7 +104,6 @@ def main():
             if os.path.isfile(nc_path):
                 data = load_agni_output(nc_path)
 
-                # Store for combined plot if needed
                 if not flux_mode:
                     if wavelengths is None:
                         wavelengths = data["bandcenter"]
@@ -133,7 +138,34 @@ def main():
                 surface=surface
             )
 
-        # Generate chi-squared summary table ===
+    # Multi-surface contrast plot (for single atmosphere)
+    if len(surfaces) > 1 and len(atmospheres) == 1 and not flux_mode:
+        surface_fluxes = {}
+        wavelengths = None
+        atmo = atmospheres[0]
+
+        for surface in surfaces:
+            nc_path = os.path.join(CONFIG["output_dir"], args.planet, surface, atmo, "atm.nc")
+            if os.path.isfile(nc_path):
+                data = load_agni_output(nc_path)
+                if wavelengths is None:
+                    wavelengths = data["bandcenter"]
+                surface_fluxes[surface] = data["ba_U_total"]
+
+        if len(surface_fluxes) > 1:
+            plot_contrasts_multi_surface(
+                surface_flux_dict=surface_fluxes,
+                wavelength_nm=wavelengths,
+                observed_df=contrast_data,
+                T_planet=T_planet,
+                T_star=T_star,
+                R_planet_rearth=R_planet,
+                R_star_rsun=R_star,
+                planet_name=args.planet,
+                atmosphere_key=atmo
+            )
+
+    # Chi-squared results
     if contrast_data is not None:
         bare_results, atmo_results = generate_chi2_table(
             output_dir=CONFIG["output_dir"],

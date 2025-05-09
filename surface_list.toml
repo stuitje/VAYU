@@ -1,0 +1,6 @@
+surfaces = [
+  "gabbro",
+  "lherzolite",
+  "norite",
+  "harzburgite"
+]
