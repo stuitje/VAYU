@@ -43,11 +43,15 @@ def main():
     parser.add_argument("planet")
     parser.add_argument("-s", "--surface", required=True, help="'all', 'list', or surface name")
     parser.add_argument("-a", "--atmosphere", required=True, help="'all', 'list', or atmosphere name")
-    parser.add_argument("--flux", default="false", choices=["true", "false"])
     parser.add_argument("--no-run", action="store_true", help="Skip config + AGNI run and just process existing output.")
+    parser.add_argument( "--flux-only", action="store_true", help="Only generate flux plots for individual configs. Skip contrast comparisons.")
+    
     args = parser.parse_args()
 
-    flux_mode = args.flux.lower() == "true"
+    flux_mode = args.flux_only
+    if flux_mode:
+        print("[INFO] Running in flux-only mode: skipping multi-surface and multi-atmosphere comparison plots.")
+
     contrast_path = os.path.join(CONFIG["obs_data_dir"], f"{args.planet}_data.csv")
     contrast_data = load_contrast_data(contrast_path)
 
