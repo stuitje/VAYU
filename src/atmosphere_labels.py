@@ -30,6 +30,7 @@ atmosphere_labels = {
     "10bar_N2": "10 bar N$_2$",
     "10bar_N2_1ppm_CO2": "10 bar N$_2$ + 1 ppm CO$_2$",
     "10bar_N2_1ppm_SO2": "10 bar N$_2$ + 1 ppm SO$_2$",
+    "10bar_N2_1ppm_H2O": "10 bar N$_2$ + 1 ppm H$_2$O",
     "10bar_N2_1000ppm_CO2": "10 bar N$_2$ + 1000 ppm CO$_2$",
     "10bar_N2_1000ppm_H2O": "10 bar N$_2$ + 1000 ppm H$_2$O",
     "10bar_O2": "10 bar O$_2$",
