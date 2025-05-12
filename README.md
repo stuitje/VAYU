@@ -34,10 +34,14 @@ VAYU/
 ├── out/                      # Model results and plots saved here (per planet)
 ├── src/
 │   ├── atmosphere_labels.py  # Labels for atmosphere keys
+│   ├── chi2_table.py         # Creates chi-2 summary table
 │   ├── config_gen.py         # Generates AGNI config TOMLs
 │   ├── constants.py          # Physical and astronomical constants
+│   ├── dataloader.py         # Loads data 
+│   ├── emission_miri.py      # Simulates observed emission with JWST Miri filters
 │   ├── pipeline.py           # Main orchestration script
 │   ├── plots.py              # Plotting utilities
+│   ├── stat.py               # Statistical functions 
 │   ├── temperature_fit.py    # Fit temperature to observational data
 │   ├── throughput.py         # Calculate JWST Miri filter throughput for simulated emission
 │   └── utils.py              # Math + I/O helpers (Planck, contrast, etc.)
