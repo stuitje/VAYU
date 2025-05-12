@@ -13,7 +13,6 @@ from src.dataloader import load_atmosphere_toml
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG = toml.load(os.path.join(ROOT, "agni_config.toml"))["paths"]
 
-
 def generate_blackbody_spectrum(
     teff: float,
     star_radius_rsun: float,
@@ -39,10 +38,6 @@ def generate_blackbody_spectrum(
         comments="# "
     )
     print(f"Wrote synthetic blackbody to: {output_path}")
-
-
-
-
 
 def write_agni_config(
     planet_name: str,
@@ -152,7 +147,7 @@ def write_agni_config(
     exec_["clean_output"] = True
     exec_["verbosity"] = 1
     exec_["max_steps"] = 20000
-    exec_["max_runtime"] = 1000
+    exec_["max_runtime"] = 2000
     exec_["num_levels"] = 50
     exec_["continua"] = True
     exec_["rayleigh"] = True
