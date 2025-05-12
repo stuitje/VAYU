@@ -1,13 +1,12 @@
 import os
-import numpy as np
 import pandas as pd
 from typing import List, Tuple
 
-from src.utils import load_agni_output, contrast_ppm
+from src.utils import contrast_ppm
+from src.dataloader import load_agni_output
 from src.constants import r_earth, r_sun
-from src.plots import compute_chi_squared
+from src.stat import compute_chi_squared
 from src.atmosphere_labels import atmosphere_labels
-
 
 
 def is_bare_surface(atmo_key: str) -> bool:
@@ -21,7 +20,7 @@ def generate_chi2_table(
     R_star_rsun: float,
     R_planet_rearth: float) -> Tuple[List[Tuple[str, float]], List[Tuple[str, float]]]:
     """
-    Return two lists of (name, chi2): bare-rock surface results and atmosphere (greybody) results.
+    Return two lists of (name, chi2): bare-rock surface results and atmosphere (greybody surface) results.
     """
     planet_dir = os.path.join(output_dir, planet)
     R_planet = R_planet_rearth * r_earth
@@ -70,7 +69,7 @@ def write_chi2_table(
 
     max_len = max(len(bare_results), len(atmo_results))
     for i in range(max_len):
-        bare_str = f"{bare_results[i][0]:<25} | {bare_results[i][1]:<8.2f}" if i < len(bare_results) else "                          |       "
+        bare_str = f"{bare_results[i][0]:<25} | {bare_results[i][1]:<8.2f}" if i < len(bare_results) else "                            |           "
 
         if i < len(atmo_results):
             atmo_key = atmo_results[i][0]
@@ -80,7 +79,7 @@ def write_chi2_table(
         else:
             atmo_str = "                                    |       "
 
-        lines.append(f"{bare_str}| {atmo_str:<46}|")
+        lines.append(f"{bare_str:<36}| {atmo_str:<46}|")
 
     path = os.path.join(output_dir, planet, filename)
     os.makedirs(os.path.dirname(path), exist_ok=True)
