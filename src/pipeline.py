@@ -3,6 +3,7 @@ import argparse
 import subprocess
 import pandas as pd
 import toml
+import time
 
 from src.config_gen import write_agni_config
 from src.temperature_fit import fit_planet_temperature
@@ -10,11 +11,11 @@ from src.plots import (
     plot_bandflux_and_contrast,
     plot_contrasts_multi_atmosphere,
     plot_contrasts_multi_surface,  
-    load_contrast_data,
     plot_surface_albedo,
     plot_multiple_surface_albedos
 )
-from src.utils import load_agni_output, compute_equilibrium_temperature
+from src.utils import compute_equilibrium_temperature
+from src.dataloader import load_agni_output, load_contrast_data
 from src.chi2_table import generate_chi2_table, write_chi2_table
 
 # Load path config
@@ -41,6 +42,9 @@ def get_atmospheres():
     )
 
 def main():
+
+    start_time = time.time()
+
     parser = argparse.ArgumentParser(description="Run AGNI + plot for planet/surface/atmo setup.")
     parser.add_argument("planet")
     parser.add_argument("-s", "--surface", required=True, help="'all', 'list', or surface name")
@@ -155,7 +159,7 @@ def main():
                 surface=surface
             )
 
-    # Multi-surface contrast plot (for single atmosphere)
+    # Multi-surface contrast plot 
     if args.surface == "list" and len(surfaces) > 1 and len(atmospheres) == 1 and not flux_mode:
         surface_fluxes = {}
         wavelengths = None
@@ -198,7 +202,10 @@ def main():
             bare_results=bare_results,
             atmo_results=atmo_results
         )
-
+    
+    end_time = time.time() 
+    elapsed_min = (end_time - start_time) / 60
+    print(f"\n[INFO] Total runtime: {elapsed_min:.2f} minutes")
 
 if __name__ == "__main__":
     main()
