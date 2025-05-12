@@ -43,7 +43,7 @@ def plot_bandflux_and_contrast(
     # Calculate y-limit for contrast plots based on BB contrast at 20 μm
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
-    ylim_max = 1.5 * contrast_bb_at_20um
+    ylim_max = 1.8 * contrast_bb_at_20um
 
     label = atmosphere_labels.get(atmosphere_key, atmosphere_key)
     if observed_df is not None:
@@ -127,7 +127,7 @@ def plot_contrasts_multi_atmosphere(
     # Calculate y-limit for contrast plots based on BB contrast at 20 μm
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
-    ylim_max = 1.5 * contrast_bb_at_20um
+    ylim_max = 1.8 * contrast_bb_at_20um
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
@@ -214,7 +214,7 @@ def plot_contrasts_multi_surface(
     # Calculate y-limit for contrast plots based on BB contrast at 20 μm
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
-    ylim_max = 1.5 * contrast_bb_at_20um
+    ylim_max = 1.8 * contrast_bb_at_20um
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
