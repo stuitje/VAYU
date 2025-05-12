@@ -46,3 +46,17 @@ def load_contrast_data(path: str) -> Optional[pd.DataFrame]:
     if os.path.isfile(path):
         return pd.read_csv(path)
     return None
+
+def load_atmosphere_toml(atmo_path: str):
+    data = toml.load(atmo_path)
+    comp = data.get("composition", {})
+    transparent = comp.get("transparent", False)
+
+    if transparent:
+        print(f"[INFO] Atmosphere '{os.path.basename(atmo_path)}' is transparent.")
+        return 1, 1, {}, True
+
+    p_surf = comp.get("p_surf", 1e5)
+    p_top = comp.get("p_top", 1e-5)
+    vmr_dict = comp.get("vmr_dict", {})
+    return float(p_surf), float(p_top), vmr_dict, False
