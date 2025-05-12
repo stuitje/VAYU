@@ -8,30 +8,13 @@ from scipy.interpolate import interp1d
 from src.constants import r_earth, r_sun
 from src.utils import planck, contrast_ppm
 from src.atmosphere_labels import atmosphere_labels
+from src.stat import compute_chi_squared
 import toml
 
-# Load config paths
+# Config paths
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG = toml.load(os.path.join(ROOT, "agni_config.toml"))["paths"]
 OUTPUT_DIR = CONFIG["output_dir"]
-
-
-def load_contrast_data(path: str) -> Optional[pd.DataFrame]:
-    if os.path.isfile(path):
-        return pd.read_csv(path)
-    return None
-
-
-def compute_chi_squared(
-    observed_df: pd.DataFrame,
-    model_wavelength_nm: np.ndarray,
-    model_contrast: np.ndarray
-) -> float:
-    interp_model = interp1d(model_wavelength_nm, model_contrast, bounds_error=False, fill_value="extrapolate")
-    model_vals = interp_model(observed_df["X"] * 1000)  # micron to nm
-    chi2 = np.sum(((observed_df["Y"] - model_vals) / observed_df["ΔY"]) ** 2)
-    dof = len(observed_df["Y"]) - 1
-    return chi2 / dof
 
 
 def plot_bandflux_and_contrast(
@@ -56,6 +39,11 @@ def plot_bandflux_and_contrast(
 
     contrast_model = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=flux_total)
     contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet))
+
+    # Calculate y-limit for contrast plots based on BB contrast at 20 μm
+    bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
+    contrast_bb_at_20um = bb_interp(20)
+    ylim_max = 1.5 * contrast_bb_at_20um
 
     label = atmosphere_labels.get(atmosphere_key, atmosphere_key)
     if observed_df is not None:
@@ -82,7 +70,7 @@ def plot_bandflux_and_contrast(
     ax2.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
     ax2.set_ylabel("Contrast (ppm)", fontsize = 13)
     ax2.set_xlim(0, 20)
-    ax2.set_ylim(0, 400)
+    ax2.set_ylim(0, ylim_max)
     ax2.grid(alpha=0.3)
     ax2.legend()
 
@@ -136,6 +124,11 @@ def plot_contrasts_multi_atmosphere(
         T_planet=T_planet
     )
 
+    # Calculate y-limit for contrast plots based on BB contrast at 20 μm
+    bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
+    contrast_bb_at_20um = bb_interp(20)
+    ylim_max = 1.5 * contrast_bb_at_20um
+
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for atmo_key, planet_flux in flux_dict.items():
@@ -163,7 +156,7 @@ def plot_contrasts_multi_atmosphere(
     ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
     ax.set_ylabel("Contrast (ppm)", fontsize = 13)
     ax.set_xlim(4, 20)
-    ax.set_ylim(0, 400)
+    ax.set_ylim(0, ylim_max)
     ax.set_title(f"{planet_name.upper()} — multiple atmospheres ({surface})", fontsize = 15)
     ax.grid(alpha=0.3)
     ax.legend()
@@ -218,6 +211,11 @@ def plot_contrasts_multi_surface(
         T_planet=T_planet
     )
 
+    # Calculate y-limit for contrast plots based on BB contrast at 20 μm
+    bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
+    contrast_bb_at_20um = bb_interp(20)
+    ylim_max = 1.5 * contrast_bb_at_20um
+
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for surface_name, planet_flux in surface_flux_dict.items():
@@ -245,7 +243,7 @@ def plot_contrasts_multi_surface(
     ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
     ax.set_ylabel("Contrast (ppm)", fontsize=13)
     ax.set_xlim(4, 20)
-    ax.set_ylim(0, 400)
+    ax.set_ylim(0, ylim_max)
     ax.set_title(f"{planet_name.upper()} — multiple bare-rock surfaces", fontsize=15)
     ax.grid(alpha=0.3)
     ax.legend()
