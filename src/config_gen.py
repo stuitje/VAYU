@@ -7,6 +7,8 @@ from tomlkit import document, table, inline_table, dumps
 from src.constants import r_earth, m_earth, r_sun, l_sun, au, G
 from src.utils import planck
 
+from src.dataloader import load_atmosphere_toml
+
 # Load config from project root
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIG = toml.load(os.path.join(ROOT, "agni_config.toml"))["paths"]
@@ -39,19 +41,7 @@ def generate_blackbody_spectrum(
     print(f"Wrote synthetic blackbody to: {output_path}")
 
 
-def load_atmosphere_toml(atmo_path: str):
-    data = toml.load(atmo_path)
-    comp = data.get("composition", {})
-    transparent = comp.get("transparent", False)
 
-    if transparent:
-        print(f"[INFO] Atmosphere '{os.path.basename(atmo_path)}' is transparent.")
-        return 1, 1, {}, True
-
-    p_surf = comp.get("p_surf", 1e5)
-    p_top = comp.get("p_top", 1e-5)
-    vmr_dict = comp.get("vmr_dict", {})
-    return float(p_surf), float(p_top), vmr_dict, False
 
 
 def write_agni_config(
@@ -78,7 +68,7 @@ def write_agni_config(
     atmo_path = os.path.join(CONFIG["atmosphere_dir"], f"{atmosphere_name}.toml")
     p_surf, p_top, vmr_dict, transparent = load_atmosphere_toml(atmo_path)
     solver = "transparent" if transparent else "gauss"
-    solution = 1 #if transparent else 0
+    solution = 3 #if transparent else 0
 
     # Surface
     if surface_name != 'greybody':
@@ -177,7 +167,7 @@ def write_agni_config(
     exec_["rainout"] = False
     exec_["solution_type"] = solution
     exec_["solver"] = solver
-    exec_["dx_max"] = 200.0
+    exec_["dx_max"] = 20.0
     exec_["initial_state"] = ["dry", "sat", "H2O"]
     exec_["linesearch"] = 0
     exec_["easy_start"] = False
