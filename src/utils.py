@@ -109,4 +109,37 @@ def compute_equilibrium_temperature(
     T_eq = ((1 - bond_albedo) * L_star / (16 * np.pi * stefan_boltzmann * d_m**2 * redistribution_factor))**0.25
     return T_eq
 
+import numpy as np
+
+# Constants
+au = 1.496e11  # Astronomical unit in meters
+r_sun = 6.957e8  # Solar radius in meters
+
+def compute_dayside_brightness_temperature(
+    stellar_temperature: float,
+    stellar_radius_rsun: float,
+    distance_au: float,
+    bond_albedo: float = 0.0,
+    redistribution_factor: float = 2/3  # 2/3 = no redistribution, 1/4 = full redistribution
+) -> float:
+    """
+    Compute dayside brightness temperature for a tidally locked planet, from Zhang et al (2024).
+
+    Args:
+        stellar_temperature: Effective temperature of the star [K]
+        stellar_radius_rsun: Stellar radius in solar radii [R_sun]
+        distance_au: Orbital distance [AU]
+        bond_albedo: Bond albedo of the planet (0 to 1)
+        redistribution_factor: f, where 1 is no redistribution, 1/4 is full redistribution
+
+    Returns:
+        Dayside brightness temperature [K]
+    """
+    R_s = stellar_radius_rsun * r_sun
+    a = distance_au * au
+
+    T_db = stellar_temperature * np.sqrt(R_s / a) * ((1 - bond_albedo) * redistribution_factor)**0.25
+    return T_db
+
+
 
