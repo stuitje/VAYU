@@ -143,7 +143,7 @@ def plot_contrasts_multi_atmosphere(
         if observed_df is not None:
             chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast)
             label += f" ($\chi^2$ = {chi2_red:.2f})"
-        ax.plot(wavelength_um, contrast, label=label)
+        ax.plot(wavelength_um, contrast, label=label, alpha = 0.8)
 
     ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"Blackbody ({T_planet:.0f} K)")
 
@@ -155,7 +155,7 @@ def plot_contrasts_multi_atmosphere(
 
     ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
     ax.set_ylabel("Contrast (ppm)", fontsize = 13)
-    ax.set_xlim(4, 20)
+    ax.set_xlim(4, 14)
     ax.set_ylim(0, ylim_max)
     ax.set_title(f"{planet_name.upper()} — multiple atmospheres ({surface})", fontsize = 15)
     ax.grid(alpha=0.3)
@@ -230,7 +230,7 @@ def plot_contrasts_multi_surface(
         if observed_df is not None:
             chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast)
             label += f" ($\chi^2$ = {chi2_red:.2f})"
-        ax.plot(wavelength_um, contrast, label=label)
+        ax.plot(wavelength_um, contrast, label=label, alpha = 0.8)
 
     ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"Blackbody ({T_planet:.0f} K)")
 
