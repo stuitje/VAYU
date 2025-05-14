@@ -14,20 +14,13 @@ from src.plots import (
     plot_surface_albedo,
     plot_multiple_surface_albedos
 )
-from src.utils import compute_equilibrium_temperature
-from src.dataloader import load_agni_output, load_contrast_data
+from src.utils import compute_equilibrium_temperature, compute_dayside_brightness_temperature
+from src.dataloader import load_agni_output, load_contrast_data, get_planet_data
 from src.chi2_table import generate_chi2_table, write_chi2_table
 
 # Load path config
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CONFIG = toml.load(os.path.join(ROOT, "..", "agni_config.toml"))["paths"]
-
-def get_planet_data(name: str) -> dict:
-    df = pd.read_csv(CONFIG["planet_csv"])
-    row = df[df["planet"].str.lower() == name.lower()]
-    if row.empty:
-        raise ValueError(f"Planet '{name}' not found.")
-    return row.iloc[0].to_dict()
 
 def get_surfaces():
     return sorted(
@@ -64,7 +57,7 @@ def main():
     pdata = get_planet_data(args.planet)
     T_star, R_star, R_planet = pdata["star_temp"], pdata["star_radius"], pdata["planet_radius"]
 
-    if contrast_data is not None:
+    if contrast_data is None: #not None: 
         T_planet, _ = fit_planet_temperature(
             csv_path=contrast_path,
             T_star=T_star,
@@ -72,11 +65,12 @@ def main():
             R_planet=R_planet
         )
     else:
-        T_planet = compute_equilibrium_temperature(
-            stellar_luminosity_logL=pdata["star_lum"],
-            distance_au=pdata["planet_a"],
-            bond_albedo=0.0,
-            redistribution_factor=0.5
+        T_planet = compute_dayside_brightness_temperature(
+            stellar_temperature = T_star,
+            stellar_radius_rsun= R_star,
+            distance_au= pdata["planet_a"],
+            bond_albedo = 0,
+            redistribution_factor= 2/3
         )
 
     # Handle surface input
