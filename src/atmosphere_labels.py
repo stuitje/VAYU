@@ -1,6 +1,6 @@
 atmosphere_labels = {
     "bare_rock": "Bare rock",
-    "earth_like": "1 bar 79% N$_2$ + 21% O$_2$ + 400 ppm CO$_2$",
+    "earth_like": "1 bar N$_2$ + 400 ppm CO$_2$",
 
     # 0.1 bar 
     "01bar_CO2": "0.1 bar CO$_2$",
