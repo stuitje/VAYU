@@ -1,9 +1,10 @@
 # AGNI files
 AGNI/
 
-# atmospheres
+# atmosphere and surface files
 res/atmospheres/*.toml
 atmos_list.toml
+surface_list.toml
 
 # automatically generated config files
 res/config/
