@@ -147,7 +147,7 @@ def write_agni_config(
     exec_["clean_output"] = True
     exec_["verbosity"] = 1
     exec_["max_steps"] = 20000
-    exec_["max_runtime"] = 2000
+    exec_["max_runtime"] = 3000
     exec_["num_levels"] = 50
     exec_["continua"] = True
     exec_["rayleigh"] = True
@@ -162,7 +162,7 @@ def write_agni_config(
     exec_["rainout"] = False
     exec_["solution_type"] = solution
     exec_["solver"] = solver
-    exec_["dx_max"] = 20.0
+    exec_["dx_max"] = 20
     exec_["initial_state"] = ["dry", "sat", "H2O"]
     exec_["linesearch"] = 0
     exec_["easy_start"] = False
