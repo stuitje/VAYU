@@ -9,6 +9,8 @@ atmosphere_labels = {
     "01bar_N2": "0.1 bar N$_2$",
     "01bar_O2": "0.1 bar O$_2$",
     "01bar_O2_H2O": "0.1 bar O$_2$ + 1% H$_2$O",
+    "01bar_N2_1ppm_CO2": "0.1 bar N$_2$ + 1 ppm CO$_2$",
+    "01bar_N2_1ppm_H2O": "0.1 bar N$_2$ + 1 ppm H$_2$O",
     "01bar_N2_1000ppm_CO2": "0.1 bar N$_2$ + 1000 ppm CO$_2$",
     "01bar_N2_1000ppm_H2O": "0.1 bar N$_2$ + 1000 ppm H$_2O$",
     "01bar_N2_1000ppm_SO2": "0.1 bar N$_2$ + 1000 ppm SO$_2$",
@@ -47,6 +49,7 @@ atmosphere_labels = {
     # 1000 bar entries
     "1000bar_N2": "1000 bar N$_2$",
     "1000bar_N2_1ppm_CO2": "1000 bar N$_2$ + 1 ppm CO$_2$",
+    "1000bar_N2_1ppm_H2O": "1000 bar N$_2$ + 1 ppm H$_2$O",
     "1000bar_O2": "1000 bar O$_2$",
     "1000bar_O2_1ppm_CO2": "1000 bar O$_2$ + 1 ppm CO$_2$",
     "1000bar_O2_1ppm_H2O": "1000 bar O$_2$ + 1 ppm H$_2$O"
