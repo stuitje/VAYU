@@ -93,12 +93,12 @@ def write_agni_config(
     gravity = (G * (planet_mass * m_earth)) / (planet_radius * r_earth) ** 2
     radius = planet_radius * r_earth
 
-    # --- TOML Construction ---
+    # TOML construction
     doc = document()
     doc["title"] = config_name
 
     planet = table()
-    planet["tmp_surf"] = tmp_surf
+    planet["tmp_surf"] = tmp_surf 
     planet["instellation"] = round(instellation, 2)
     planet["albedo_b"] = 0.0
     planet["s0_fact"] = 0.6652
