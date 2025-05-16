@@ -1,6 +1,13 @@
 # adapted from https://github.com/rodluger/planetplanet/blob/362003dbe4bb607d5ad7d561f62949cb9553acf4/planetplanet/detect/jwst.py#L35
 
 import os
+import toml
+
+ROOT = os.path.dirname(os.path.abspath(__file__))
+CONFIG = toml.load(os.path.join(ROOT, "..", "agni_config.toml"))["paths"]
+
+os.environ["pandeia_refdata"] = CONFIG["pandeia_dir"]
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,12 +16,9 @@ from src.utils import planck, compute_dayside_brightness_temperature
 from src.dataloader import load_agni_output,  get_planet_data
 from src.temperature_fit import fit_planet_temperature
 from src import constants as c
-import toml
 from matplotlib.gridspec import GridSpec
 from src.atmosphere_labels import atmosphere_labels
 
-ROOT = os.path.dirname(os.path.abspath(__file__))
-CONFIG = toml.load(os.path.join(ROOT, "..", "agni_config.toml"))["paths"]
 
 # throughput 
 def get_throughput(wave_um, filter_name):
@@ -119,8 +123,6 @@ def compute_relative_emissions(nc_path, T_planet, wave_um, throughputs, star_flu
         snr_dict = compute_snr(wave_um, interp_model_earth, star_flux, tp, n_eclipses=n_eclipses)
         results[f"{filt}_SNR"] = snr_dict["snr"]
         results[f"{filt}_uncert"] = snr_dict["uncertainty"]
-
-        print(snr_dict)
     return results
 
 
@@ -177,7 +179,7 @@ def main():
     atmospheres = [f.replace(".toml", "") for f in os.listdir(atmosphere_dir) if f.endswith(".toml")]
     results_atmo = []
     for atmo in atmospheres:
-        if "_O2" in atmo or "SO2" in atmo or "100bar_H2O" in atmo:
+        if "_O2" in atmo or "100bar_H2O" in atmo:
             print(f"[SKIPPED] {atmo}")
             continue
         nc_path = os.path.join(output_dir, planet, surface, atmo, "atm.nc")
@@ -197,7 +199,7 @@ def main():
     df_atmo = df_atmo.sort_values("Label")
 
     # plot
-    fig = plt.figure(figsize=(18, 5))
+    fig = plt.figure(figsize=(22, 5))
     gs = GridSpec(1, 2, width_ratios=[1.4, 1], wspace=0.07)  # 1.4x wider for left plot, smaller spacing
 
     ax1 = fig.add_subplot(gs[0])
