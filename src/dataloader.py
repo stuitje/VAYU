@@ -9,14 +9,14 @@ CONFIG = toml.load(os.path.join(ROOT, "agni_config.toml"))["paths"]
 
 def load_agni_output(nc_path: str) -> dict:
     """
-    Load AGNI NetCDF output and return key data arrays.
+    Load AGNI NetCDF output and return key data arrays, including surface temperature.
 
     Args:
         nc_path: Path to AGNI .nc file
 
     Returns:
         Dictionary with bandcenter (nm), longwave and shortwave fluxes,
-        and total flux. 
+        total flux, and surface temperature.
     """
     ds = nc.Dataset(nc_path)
     bandmin = ds["bandmin"][:]
@@ -28,12 +28,18 @@ def load_agni_output(nc_path: str) -> dict:
     flux_sw = ds["ba_U_SW"][1, :] / bandwidth
     flux_total = flux_lw + flux_sw
 
+    # Load surface temperature
+    tmp_surf = ds["tmp_surf"][:].item()  # surface temperature in Kelvin
+
     return {
         "bandcenter": bandcenter,
         "ba_U_LW": flux_lw,
         "ba_U_SW": flux_sw,
-        "ba_U_total": flux_total
+        "ba_U_total": flux_total,
+        "tmp_surf": tmp_surf
+
     }
+
 
 def get_planet_data(name: str) -> dict:
     df = pd.read_csv(CONFIG["planet_csv"])
