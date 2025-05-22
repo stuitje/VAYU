@@ -129,6 +129,7 @@ def main():
                     planet_flux_lw=data["ba_U_LW"],
                     planet_flux_sw=data["ba_U_SW"],
                     T_planet=T_planet,
+                    T_surf = data["tmp_surf"],
                     T_star=T_star,
                     R_planet_rearth=R_planet,
                     R_star_rsun=R_star,
