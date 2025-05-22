@@ -1,6 +1,38 @@
 surfaces = [
-  "gabbro",
-  "lherzolite",
-  "norite",
-  "harzburgite"
+    "albite_dust",
+    "andesite",
+    "basalt_glass",
+    "basalt_large",
+    "basalt_small",
+    "basalt_tuff",
+    "basalts_lab",
+    "diorite",
+    "gabbro",
+    "gabbro2",
+    "granite",
+    "greybody",
+    "harzburgite",
+    "hematite",
+    "lherzolite",
+    "lunar_anorthosite",
+    "lunar_marebasalt",
+    "magnesium_sulphate",
+    "mars_basalticshergottite",
+    "mars_breccia",
+    "mars_meteorite",
+    "mgso4",
+    "norite",
+    "phonolite",
+    "pyrite",
+    "rhyolite",
+    "syenite",
+    "tephrite",
+    "tholeiitic_basalt",
+    "trachy_andesite",
+    "trachy_basalt",
+    "trachyte",
+    "ultramafic"
 ]
+
+
+
