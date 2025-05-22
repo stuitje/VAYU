@@ -22,6 +22,7 @@ def plot_bandflux_and_contrast(
     planet_flux_lw: np.ndarray,
     planet_flux_sw: np.ndarray,
     T_planet: float,
+    T_surf: float,
     T_star: float,
     R_planet_rearth: float,
     R_star_rsun: float,
@@ -37,15 +38,26 @@ def plot_bandflux_and_contrast(
     flux_total = planet_flux_lw + planet_flux_sw
     wavelength_um = wavelength_nm / 1000
 
-    contrast_model = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=flux_total)
-    contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet))
+    # Strip the last character to get the base stellar name
+    star_name = planet_name[:-1]  
+    star_path = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}.txt")
+    star_path_SPHINX = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+
+    if os.path.exists(star_path_SPHINX):
+        star_path = star_path_SPHINX
+
+    contrast_model = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=flux_total, stellar_spectrum=star_path)
+    contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet), stellar_spectrum=star_path)
 
     # Calculate y-limit for contrast plots based on BB contrast at 20 μm
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
-    ylim_max = 1.8 * contrast_bb_at_20um
+    ylim_max = 2.3 * contrast_bb_at_20um
 
-    label = atmosphere_labels.get(atmosphere_key, atmosphere_key)
+    label = atmosphere_labels.get(atmosphere_key, atmosphere_key) 
+    title = label
+    label +=  f"\n{T_surf:.0f} K"
+
     if observed_df is not None:
         chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast_model)
         label += f" ($\chi^2$= {chi2_red:.2f})"
@@ -56,8 +68,8 @@ def plot_bandflux_and_contrast(
     ax1.plot(wavelength_um, planet_flux_lw, "--", label="LW", color="royalblue")
     ax1.plot(wavelength_um, planet_flux_sw, ":", label="SW", color="orangered")
     ax1.set_ylabel(r"Flux (W/m$^2$/nm)", fontsize = 13)
-    ax1.set_title(f"{planet_name.upper()} — {label} — {surface}", fontsize = 15)
-    ax1.legend()
+    ax1.set_title(f"{planet_name.upper()} — {title} — {surface}", fontsize = 15)
+    ax1.legend(loc = 1)
     ax1.grid(alpha=0.3)
 
     ax2.plot(wavelength_um, contrast_model, label=label, color="crimson")
@@ -69,10 +81,10 @@ def plot_bandflux_and_contrast(
 
     ax2.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
     ax2.set_ylabel("Contrast (ppm)", fontsize = 13)
-    ax2.set_xlim(0, 20)
+    ax2.set_xlim(0, 17)
     ax2.set_ylim(0, ylim_max)
     ax2.grid(alpha=0.3)
-    ax2.legend()
+    ax2.legend(loc = 2)
 
     plt.tight_layout()
     if save_path == "auto":
@@ -116,15 +128,24 @@ def plot_contrasts_multi_atmosphere(
     R_star_m = R_star_rsun * r_sun
     wavelength_um = wavelength_nm / 1000
 
+    # Strip the last character to get the base stellar name
+    star_name = planet_name[:-1]  
+    star_path = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}.txt")
+    star_path_SPHINX = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+
+    if os.path.exists(star_path_SPHINX):
+        star_path = star_path_SPHINX
+
     contrast_bb = contrast_ppm(
         wavelength_nm=wavelength_nm,
         T_star=T_star,
         R_planet_m=R_planet_m,
         R_star_m=R_star_m,
-        T_planet=T_planet
+        T_planet=T_planet,
+        stellar_spectrum=star_path
     )
 
-    # Calculate y-limit for contrast plots based on BB contrast at 20 μm
+    # Calculate y-limit for contrast plots based on BB contrast at 20 micron
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
     ylim_max = 1.8 * contrast_bb_at_20um
@@ -203,12 +224,22 @@ def plot_contrasts_multi_surface(
     R_star_m = R_star_rsun * r_sun
     wavelength_um = wavelength_nm / 1000
 
+
+    # Strip the last character to get the base stellar name
+    star_name = planet_name[:-1]  
+    star_path = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}.txt")
+    star_path_SPHINX = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+
+    if os.path.exists(star_path_SPHINX):
+        star_path = star_path_SPHINX
+
     contrast_bb = contrast_ppm(
         wavelength_nm=wavelength_nm,
         T_star=T_star,
         R_planet_m=R_planet_m,
         R_star_m=R_star_m,
-        T_planet=T_planet
+        T_planet=T_planet,
+        stellar_spectrum=star_path
     )
 
     # Calculate y-limit for contrast plots based on BB contrast at 20 μm
