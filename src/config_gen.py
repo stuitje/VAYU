@@ -101,8 +101,8 @@ def write_agni_config(
     planet["tmp_surf"] = tmp_surf 
     planet["instellation"] = round(instellation, 2)
     planet["albedo_b"] = 0.0
-    planet["s0_fact"] = 0.6652
-    planet["zenith_angle"] = 0.0
+    planet["s0_fact"] = 1.0 #0.6652
+    planet["zenith_angle"] = 45.0
     planet["surface_material"] = surface_path
     planet["albedo_s"] = 0.0
     planet["radius"] = radius
@@ -120,6 +120,10 @@ def write_agni_config(
     # Make sure that O2 uses the spectral file that includes O2 opacity
     if "O2" in atmosphere_name and all(x not in atmosphere_name for x in ["CO2", "SO2"]):
         spectral_file = CONFIG["spectral_file_O2"]
+    elif "H2O" in atmosphere_name and all(x not in atmosphere_name for x in ["N2", "O2", "Si", "NH3", "CH4", "CO2", "SO2"]):
+        spectral_file = CONFIG["spectral_file_H2O"]
+    elif "Si" in atmosphere_name: 
+        spectral_file = CONFIG["spectral_file_Si"]
     else:
         spectral_file = CONFIG["spectral_file"]
 
@@ -147,7 +151,7 @@ def write_agni_config(
     exec_["clean_output"] = True
     exec_["verbosity"] = 1
     exec_["max_steps"] = 20000
-    exec_["max_runtime"] = 3000
+    exec_["max_runtime"] = 10000
     exec_["num_levels"] = 50
     exec_["continua"] = True
     exec_["rayleigh"] = True
@@ -162,7 +166,7 @@ def write_agni_config(
     exec_["rainout"] = False
     exec_["solution_type"] = solution
     exec_["solver"] = solver
-    exec_["dx_max"] = 20
+    exec_["dx_max"] = 50
     exec_["initial_state"] = ["dry", "sat", "H2O"]
     exec_["linesearch"] = 0
     exec_["easy_start"] = False
