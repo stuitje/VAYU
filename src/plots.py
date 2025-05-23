@@ -22,6 +22,7 @@ def plot_bandflux_and_contrast(
     planet_flux_lw: np.ndarray,
     planet_flux_sw: np.ndarray,
     T_planet: float,
+    T_planet_full: float,
     T_surf: float,
     T_star: float,
     R_planet_rearth: float,
@@ -48,11 +49,12 @@ def plot_bandflux_and_contrast(
 
     contrast_model = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=flux_total, stellar_spectrum=star_path)
     contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet), stellar_spectrum=star_path)
+    contrast_bb_full = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet_full), stellar_spectrum=star_path)
 
     # Calculate y-limit for contrast plots based on BB contrast at 20 μm
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
-    ylim_max = 2.3 * contrast_bb_at_20um
+    ylim_max = 1.8 * contrast_bb_at_20um
 
     label = atmosphere_labels.get(atmosphere_key, atmosphere_key) 
     title = label
@@ -62,7 +64,7 @@ def plot_bandflux_and_contrast(
         chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast_model)
         label += f" ($\chi^2$= {chi2_red:.2f})"
 
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={"height_ratios": [2, 1]})
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={"height_ratios": [1.5, 1]})
 
     ax1.plot(wavelength_um, flux_total, label="Total", color="black")
     ax1.plot(wavelength_um, planet_flux_lw, "--", label="LW", color="royalblue")
@@ -73,7 +75,8 @@ def plot_bandflux_and_contrast(
     ax1.grid(alpha=0.3)
 
     ax2.plot(wavelength_um, contrast_model, label=label, color="crimson")
-    ax2.plot(wavelength_um, contrast_bb, "--", label=f"Blackbody ({T_planet:.0f} K)", color="black")
+    ax2.plot(wavelength_um, contrast_bb, "--", label=f"BB, f = 2/3 ({T_planet:.0f} K)", color="black")
+    ax2.plot(wavelength_um, contrast_bb_full, "--", label=f"BB, f = 1/4 ({T_planet:.0f} K)", color="grey")
 
     if observed_df is not None:
         ax2.errorbar(observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"],
@@ -102,6 +105,7 @@ def plot_contrasts_multi_atmosphere(
     wavelength_nm: np.ndarray,
     observed_df: Optional[pd.DataFrame],
     T_planet: float,
+    T_planet_full: float,
     T_star: float,
     R_planet_rearth: float,
     R_star_rsun: float,
@@ -145,6 +149,15 @@ def plot_contrasts_multi_atmosphere(
         stellar_spectrum=star_path
     )
 
+    contrast_bb_full = contrast_ppm(
+        wavelength_nm=wavelength_nm,
+        T_star=T_star,
+        R_planet_m=R_planet_m,
+        R_star_m=R_star_m,
+        T_planet=T_planet_full,
+        stellar_spectrum=star_path
+    )
+
     # Calculate y-limit for contrast plots based on BB contrast at 20 micron
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
@@ -166,7 +179,8 @@ def plot_contrasts_multi_atmosphere(
             label += f" ($\chi^2$ = {chi2_red:.2f})"
         ax.plot(wavelength_um, contrast, label=label, alpha = 0.8)
 
-    ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"Blackbody ({T_planet:.0f} K)")
+    ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"BB, f = 2/3 ({T_planet:.0f} K)")
+    ax.plot(wavelength_um, contrast_bb_full, "--", color="grey", label=f"BB, f = 1/4 ({T_planet:.0f} K)")
 
     if observed_df is not None:
         ax.errorbar(
@@ -198,6 +212,7 @@ def plot_contrasts_multi_surface(
     wavelength_nm: np.ndarray,
     observed_df: Optional[pd.DataFrame],
     T_planet: float,
+    T_planet_full: float,
     T_star: float,
     R_planet_rearth: float,
     R_star_rsun: float,
@@ -242,6 +257,15 @@ def plot_contrasts_multi_surface(
         stellar_spectrum=star_path
     )
 
+    contrast_bb_full = contrast_ppm(
+        wavelength_nm=wavelength_nm,
+        T_star=T_star,
+        R_planet_m=R_planet_m,
+        R_star_m=R_star_m,
+        T_planet=T_planet_full,
+        stellar_spectrum=star_path
+    )
+
     # Calculate y-limit for contrast plots based on BB contrast at 20 μm
     bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
@@ -258,12 +282,13 @@ def plot_contrasts_multi_surface(
             planet_flux=planet_flux
         )
         label = f"{surface_name}"
-        if observed_df is not None:
+        if observed_df is not None and len(observed_df) > 2:
             chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast)
             label += f" ($\chi^2$ = {chi2_red:.2f})"
         ax.plot(wavelength_um, contrast, label=label, alpha = 0.8)
 
-    ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"Blackbody ({T_planet:.0f} K)")
+    ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"BB, f = 2/3 ({T_planet:.0f} K)")
+    ax.plot(wavelength_um, contrast_bb_full, "--", color="grey", label=f"BB, f = 1/4 ({T_planet:.0f} K)")
 
     if observed_df is not None:
         ax.errorbar(
