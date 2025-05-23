@@ -43,7 +43,8 @@ def write_agni_config(
     planet_name: str,
     atmosphere_name: str,
     surface_name: str,
-    tmp_surf: float
+    tmp_surf: float,
+    distribution: str = "dayside"
 ) -> None:
     df = pd.read_csv(CONFIG["planet_csv"])
     row = df[df["planet"].str.lower() == planet_name.lower()]
@@ -93,6 +94,16 @@ def write_agni_config(
     gravity = (G * (planet_mass * m_earth)) / (planet_radius * r_earth) ** 2
     radius = planet_radius * r_earth
 
+    # Determine zenith angle based on distribution mode
+    if distribution == "substellar":
+        zenith_angle = 0.0
+    elif distribution == "dayside":
+        zenith_angle = np.degrees(np.arccos(2/3))
+    elif distribution == "full":
+        zenith_angle = np.degrees(np.arccos(1/4))
+    else:
+        raise ValueError("Invalid distribution mode. Choose from: 'substellar', 'dayside', 'full'")
+
     # TOML construction
     doc = document()
     doc["title"] = config_name
@@ -101,8 +112,8 @@ def write_agni_config(
     planet["tmp_surf"] = tmp_surf 
     planet["instellation"] = round(instellation, 2)
     planet["albedo_b"] = 0.0
-    planet["s0_fact"] = 1.0 #0.6652
-    planet["zenith_angle"] = 45.0
+    planet["s0_fact"] = 1.0
+    planet["zenith_angle"] = zenith_angle
     planet["surface_material"] = surface_path
     planet["albedo_s"] = 0.0
     planet["radius"] = radius
@@ -116,11 +127,9 @@ def write_agni_config(
     doc["planet"] = planet
 
     files = table()
-
-    # Make sure that O2 uses the spectral file that includes O2 opacity
     if "O2" in atmosphere_name and all(x not in atmosphere_name for x in ["CO2", "SO2"]):
         spectral_file = CONFIG["spectral_file_O2"]
-    elif "H2O" in atmosphere_name and all(x not in atmosphere_name for x in ["N2", "O2", "Si", "NH3", "CH4", "CO2", "SO2"]):
+    elif "H2O" in atmosphere_name and all(x not in atmosphere_name for x in ["N2", "O2", "O3", "Si", "NH3", "CH4", "CO2", "SO2"]):
         spectral_file = CONFIG["spectral_file_H2O"]
     elif "Si" in atmosphere_name: 
         spectral_file = CONFIG["spectral_file_Si"]
@@ -167,9 +176,9 @@ def write_agni_config(
     exec_["solution_type"] = solution
     exec_["solver"] = solver
     exec_["dx_max"] = 50
-    exec_["initial_state"] = ["dry", "sat", "H2O"]
+    exec_["initial_state"] = ["iso", "1200"]
     exec_["linesearch"] = 0
-    exec_["easy_start"] = False
+    exec_["easy_start"] = True
     exec_["converge_atol"] = 1.0e-3
     exec_["converge_rtol"] = 1.0e-1
     doc["execution"] = exec_

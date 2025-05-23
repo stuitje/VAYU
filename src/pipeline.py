@@ -42,6 +42,7 @@ def main():
     parser.add_argument("planet")
     parser.add_argument("-s", "--surface", required=True, help="'all', 'list', or surface name")
     parser.add_argument("-a", "--atmosphere", required=True, help="'all', 'list', or atmosphere name")
+    parser.add_argument("-T", choices=["dayside", "substellar", "full"], default="dayside",help="Select temperature model for initial surface temperature: 'substellar' (no redistribution), 'dayside' (default), or 'full' (full redistribution)")
     parser.add_argument("--no-run", action="store_true", help="Skip config + AGNI run and just process existing output.")
     parser.add_argument( "--flux-only", action="store_true", help="Only generate flux plots for individual configs. Skip contrast comparisons.")
     
@@ -57,20 +58,36 @@ def main():
     pdata = get_planet_data(args.planet)
     T_star, R_star, R_planet = pdata["star_temp"], pdata["star_radius"], pdata["planet_radius"]
 
-    if contrast_data is None: #not None: 
-        T_planet, _ = fit_planet_temperature(
-            csv_path=contrast_path,
-            T_star=T_star,
-            R_star=R_star,
-            R_planet=R_planet
-        )
+    # Select redistribution factor based on temperature model
+    if args.T == "substellar":
+        f_redis = 1.0
+    elif args.T == "full":
+        f_redis = 1/4
     else:
-        T_planet = compute_dayside_brightness_temperature(
-            stellar_temperature = T_star,
-            stellar_radius_rsun= R_star,
-            distance_au= pdata["planet_a"],
-            bond_albedo = 0,
-            redistribution_factor= 2/3
+        f_redis = 2/3  # default: dayside average
+
+    T_planet = compute_dayside_brightness_temperature(
+        stellar_temperature=T_star,        
+        stellar_radius_rsun=R_star,
+        distance_au=pdata["planet_a"],
+        bond_albedo=0,
+        redistribution_factor=f_redis
+    )
+
+    T_planet_day = compute_dayside_brightness_temperature(
+        stellar_temperature=T_star,        
+        stellar_radius_rsun=R_star,
+        distance_au=pdata["planet_a"],
+        bond_albedo=0,
+        redistribution_factor=2/3
+    )
+    
+    T_planet_full = compute_dayside_brightness_temperature(
+        stellar_temperature = T_star,        
+        stellar_radius_rsun= R_star,
+        distance_au= pdata["planet_a"],
+        bond_albedo = 0,
+        redistribution_factor= 1/4
         )
 
     # Handle surface input
@@ -107,7 +124,7 @@ def main():
 
         for atmo in atmospheres:
             if not args.no_run:
-                write_agni_config(args.planet, atmo, surface, T_planet)
+                write_agni_config(args.planet, atmo, surface, T_planet, args.T)
                 config_dir = os.path.join(CONFIG["config_dir"], f"{args.planet}_{surface}_{atmo}".lower())
                 config_file = os.path.join(config_dir, "config.toml")
                 print(f"Running AGNI for {surface}, {atmo}")
@@ -128,7 +145,8 @@ def main():
                     wavelength_nm=data["bandcenter"],
                     planet_flux_lw=data["ba_U_LW"],
                     planet_flux_sw=data["ba_U_SW"],
-                    T_planet=T_planet,
+                    T_planet=T_planet_day,
+                    T_planet_full=T_planet_full,
                     T_surf = data["tmp_surf"],
                     T_star=T_star,
                     R_planet_rearth=R_planet,
@@ -146,7 +164,8 @@ def main():
                 flux_dict=fluxes,
                 wavelength_nm=wavelengths,
                 observed_df=contrast_data,
-                T_planet=T_planet,
+                T_planet=T_planet_day,
+                T_planet_full=T_planet_full,
                 T_star=T_star,
                 R_planet_rearth=R_planet,
                 R_star_rsun=R_star,
@@ -173,7 +192,8 @@ def main():
                 surface_flux_dict=surface_fluxes,
                 wavelength_nm=wavelengths,
                 observed_df=contrast_data,
-                T_planet=T_planet,
+                T_planet=T_planet_day,
+                T_planet_full=T_planet_full,
                 T_star=T_star,
                 R_planet_rearth=R_planet,
                 R_star_rsun=R_star,
