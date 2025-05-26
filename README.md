@@ -2,7 +2,7 @@
 
 A modular Python-based pipeline for modeling exoplanetary atmospheres and surfaces, generating synthetic eclipse depths, and comparing outputs with observational contrast data. The system integrates with a Julia-based radiative transfer model (AGNI) to simulate and analyze a variety of atmospheric and surface conditions.
 
-AGNI: nichollsh.github.io/AGNI/
+[AGNI](https://nichollsh.github.io/AGNI/)
 
 ---
 
