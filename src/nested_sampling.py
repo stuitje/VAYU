@@ -84,23 +84,18 @@ def compare_models(planet_name, surfaces, atmospheres):
             if best_logZ is None or logZ > best_logZ:
                 best_logZ = logZ
 
-    # Add Delta lnZ column
+    # Add Delta lnZ and Bayes factor columns
     for result in results:
-        result["ΔlnZ"] = result["logZ"] - best_logZ
+        delta_lnZ = result["logZ"] - best_logZ
+        result["ΔlnZ"] = delta_lnZ
+        result["bayes_factor"] = np.exp(delta_lnZ)
 
     df = pd.DataFrame(results)
-
-    # Convert logZ to relative model probabilities
-    logZs = df["logZ"].values
-    logZ_max = np.max(logZs)
-    weights = np.exp(logZs - logZ_max)  # unnormalized
-    probs = weights / np.sum(weights)   # normalize 
-
-    df["model_prob"] = probs
 
     df.to_csv(os.path.join(CONFIG["output_dir"], planet_name, "bayes_model_comparison.csv"), index=False)
     print(f"[DONE] Results written to bayes_model_comparison.csv")
     return df
+
 
 if __name__ == "__main__":
     
