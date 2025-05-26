@@ -1,8 +1,6 @@
 # AGNI-integrated Rocky Surfaces and Atmospheres Analysis
 
-A modular Python-based pipeline for modeling exoplanetary atmospheres and surfaces, generating synthetic eclipse depths, and comparing outputs with observational contrast data. The system integrates with a Julia-based radiative transfer model (AGNI) to simulate and analyze a variety of atmospheric and surface conditions.
-
-[AGNI](https://nichollsh.github.io/AGNI/)
+A modular Python-based pipeline for modeling exoplanetary atmospheres and surfaces, generating synthetic eclipse depths, and comparing outputs with observational contrast data. The system integrates with a Julia-based radiative transfer model ([AGNI](https://nichollsh.github.io/AGNI/)) to simulate and analyze a variety of atmospheric and surface conditions.
 
 ---
 
