@@ -2,6 +2,12 @@ atmosphere_labels = {
     "bare_rock": "Bare rock",
     "earth_like": "1 bar N$_2$ + 400 ppm CO$_2$",
 
+     # 0.01 bar 
+    "001bar_CO2": "0.01 bar CO$_2$",
+    "001bar_SO2": "0.01 bar SO$_2$",
+    "001bar_H2O": "0.01 bar H$_2$O",
+    "001bar_NH3": "0.01 bar NH$_3$",
+
     # 0.1 bar 
     "01bar_CO2": "0.1 bar CO$_2$",
     "01bar_SO2": "0.1 bar SO$_2$",
