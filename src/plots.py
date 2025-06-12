@@ -17,6 +17,23 @@ CONFIG = toml.load(os.path.join(ROOT, "agni_config.toml"))["paths"]
 OUTPUT_DIR = CONFIG["output_dir"]
 
 
+def get_star_spectrum_info(planet_name: str):
+    star_name = planet_name[:-1]
+    star_path = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}.txt")
+    star_path_sphinx = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+    if os.path.exists(star_path_sphinx):
+        star_path = star_path_sphinx
+
+    if star_name == 'gj486':
+        return star_path, True, 3300
+    elif star_name == 'gj367':
+        return star_path, True, 3500
+    elif star_name == 'trappist-1':
+        return star_path, False, None
+    else:
+        return star_path, True, None
+
+
 def plot_bandflux_and_contrast(
     wavelength_nm: np.ndarray,
     planet_flux_lw: np.ndarray,
@@ -35,43 +52,34 @@ def plot_bandflux_and_contrast(
 ):
     R_planet_m = R_planet_rearth * r_earth
     R_star_m = R_star_rsun * r_sun
-
     flux_total = planet_flux_lw + planet_flux_sw
     wavelength_um = wavelength_nm / 1000
 
-    # Strip the last character to get the base stellar name
-    star_name = planet_name[:-1]  
-    star_path = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}.txt")
-    star_path_SPHINX = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+    star_path, rescale, T_spectrum = get_star_spectrum_info(planet_name)
 
-    if os.path.exists(star_path_SPHINX):
-        star_path = star_path_SPHINX
+    contrast_model = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=flux_total, stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
+    contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet), stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
+    contrast_bb_full = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet_full), stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
 
-    contrast_model = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=flux_total, stellar_spectrum=star_path)
-    contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet), stellar_spectrum=star_path)
-    contrast_bb_full = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planck(wavelength_nm, T_planet_full), stellar_spectrum=star_path)
-
-    # Calculate y-limit for contrast plots based on BB contrast at 20 μm
-    bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
+    bb_interp = interp1d(wavelength_um, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
     ylim_max = 1.8 * contrast_bb_at_20um
 
-    label = atmosphere_labels.get(atmosphere_key, atmosphere_key) 
+    label = atmosphere_labels.get(atmosphere_key, atmosphere_key)
     title = label
-    label +=  f"\n{T_surf:.0f} K"
+    label += f"\n{T_surf:.0f} K"
 
     if observed_df is not None:
         chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast_model)
         label += f" ($\chi^2$= {chi2_red:.2f})"
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={"height_ratios": [1.5, 1]})
-
     ax1.plot(wavelength_um, flux_total, label="Total", color="black")
     ax1.plot(wavelength_um, planet_flux_lw, "--", label="LW", color="royalblue")
     ax1.plot(wavelength_um, planet_flux_sw, ":", label="SW", color="orangered")
-    ax1.set_ylabel(r"Flux (W/m$^2$/nm)", fontsize = 13)
-    ax1.set_title(f"{planet_name.upper()} — {title} — {surface}", fontsize = 15)
-    ax1.legend(loc = 1)
+    ax1.set_ylabel(r"Flux (W/m$^2$/nm)", fontsize=13)
+    ax1.set_title(f"{planet_name.upper()} — {title} — {surface}", fontsize=15)
+    ax1.legend(loc=1)
     ax1.grid(alpha=0.3)
 
     ax2.plot(wavelength_um, contrast_model, label=label, color="crimson")
@@ -80,14 +88,14 @@ def plot_bandflux_and_contrast(
 
     if observed_df is not None:
         ax2.errorbar(observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"],
-                     fmt="o", color="blue",  ecolor='gray', capsize=2, label="Observed")
+                     fmt="o", color="blue", ecolor='gray', capsize=2, label="Observed")
 
-    ax2.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
-    ax2.set_ylabel("Contrast (ppm)", fontsize = 13)
+    ax2.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
+    ax2.set_ylabel("Contrast (ppm)", fontsize=13)
     ax2.set_xlim(0, 17)
     ax2.set_ylim(0, ylim_max)
     ax2.grid(alpha=0.3)
-    ax2.legend(loc = 2)
+    ax2.legend(loc=2)
 
     plt.tight_layout()
     if save_path == "auto":
@@ -132,67 +140,37 @@ def plot_contrasts_multi_atmosphere(
     R_star_m = R_star_rsun * r_sun
     wavelength_um = wavelength_nm / 1000
 
-    # Strip the last character to get the base stellar name
-    star_name = planet_name[:-1]  
-    star_path = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}.txt")
-    star_path_SPHINX = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+    star_path, rescale, T_spectrum = get_star_spectrum_info(planet_name)
 
-    if os.path.exists(star_path_SPHINX):
-        star_path = star_path_SPHINX
+    contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, T_planet=T_planet, stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
+    contrast_bb_full = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, T_planet=T_planet_full, stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
 
-    contrast_bb = contrast_ppm(
-        wavelength_nm=wavelength_nm,
-        T_star=T_star,
-        R_planet_m=R_planet_m,
-        R_star_m=R_star_m,
-        T_planet=T_planet,
-        stellar_spectrum=star_path
-    )
-
-    contrast_bb_full = contrast_ppm(
-        wavelength_nm=wavelength_nm,
-        T_star=T_star,
-        R_planet_m=R_planet_m,
-        R_star_m=R_star_m,
-        T_planet=T_planet_full,
-        stellar_spectrum=star_path
-    )
-
-    # Calculate y-limit for contrast plots based on BB contrast at 20 micron
-    bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
+    bb_interp = interp1d(wavelength_um, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
     ylim_max = 1.8 * contrast_bb_at_20um
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for atmo_key, planet_flux in flux_dict.items():
-        contrast = contrast_ppm(
-            wavelength_nm=wavelength_nm,
-            T_star=T_star,
-            R_planet_m=R_planet_m,
-            R_star_m=R_star_m,
-            planet_flux=planet_flux
-        )
+        contrast = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planet_flux, stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
         label = atmosphere_labels.get(atmo_key, atmo_key)
         if observed_df is not None:
             chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast)
             label += f" ($\chi^2$ = {chi2_red:.2f})"
-        ax.plot(wavelength_um, contrast, label=label, alpha = 0.8)
+        ax.plot(wavelength_um, contrast, label=label, alpha=0.8)
 
     ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"BB, f = 2/3 ({T_planet:.0f} K)")
     ax.plot(wavelength_um, contrast_bb_full, "--", color="grey", label=f"BB, f = 1/4 ({T_planet:.0f} K)")
 
     if observed_df is not None:
-        ax.errorbar(
-            observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"],
-            fmt="o", color="blue", ecolor='gray', capsize=2, label="Observed"
-        )
+        ax.errorbar(observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"],
+                    fmt="o", color="blue", ecolor='gray', capsize=2, label="Observed")
 
-    ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize = 13)
-    ax.set_ylabel("Contrast (ppm)", fontsize = 13)
+    ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
+    ax.set_ylabel("Contrast (ppm)", fontsize=13)
     ax.set_xlim(4, 14)
     ax.set_ylim(0, ylim_max)
-    ax.set_title(f"{planet_name.upper()} — multiple atmospheres ({surface})", fontsize = 15)
+    ax.set_title(f"{planet_name.upper()} — multiple atmospheres ({surface})", fontsize=15)
     ax.grid(alpha=0.3)
     ax.legend()
 
@@ -239,62 +217,31 @@ def plot_contrasts_multi_surface(
     R_star_m = R_star_rsun * r_sun
     wavelength_um = wavelength_nm / 1000
 
+    star_path, rescale, T_spectrum = get_star_spectrum_info(planet_name)
 
-    # Strip the last character to get the base stellar name
-    star_name = planet_name[:-1]  
-    star_path = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}.txt")
-    star_path_SPHINX = os.path.join(ROOT, "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+    contrast_bb = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, T_planet=T_planet, stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
+    contrast_bb_full = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, T_planet=T_planet_full, stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
 
-    if os.path.exists(star_path_SPHINX):
-        star_path = star_path_SPHINX
-
-    contrast_bb = contrast_ppm(
-        wavelength_nm=wavelength_nm,
-        T_star=T_star,
-        R_planet_m=R_planet_m,
-        R_star_m=R_star_m,
-        T_planet=T_planet,
-        stellar_spectrum=star_path
-    )
-
-    contrast_bb_full = contrast_ppm(
-        wavelength_nm=wavelength_nm,
-        T_star=T_star,
-        R_planet_m=R_planet_m,
-        R_star_m=R_star_m,
-        T_planet=T_planet_full,
-        stellar_spectrum=star_path
-    )
-
-    # Calculate y-limit for contrast plots based on BB contrast at 20 μm
-    bb_interp = interp1d(wavelength_nm / 1000, contrast_bb, bounds_error=False, fill_value="extrapolate")
+    bb_interp = interp1d(wavelength_um, contrast_bb, bounds_error=False, fill_value="extrapolate")
     contrast_bb_at_20um = bb_interp(20)
     ylim_max = 1.8 * contrast_bb_at_20um
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
     for surface_name, planet_flux in surface_flux_dict.items():
-        contrast = contrast_ppm(
-            wavelength_nm=wavelength_nm,
-            T_star=T_star,
-            R_planet_m=R_planet_m,
-            R_star_m=R_star_m,
-            planet_flux=planet_flux
-        )
+        contrast = contrast_ppm(wavelength_nm, T_star, R_planet_m, R_star_m, planet_flux=planet_flux, stellar_spectrum=star_path, rescale=rescale, T_spectrum=T_spectrum)
         label = f"{surface_name}"
         if observed_df is not None and len(observed_df) > 2:
             chi2_red = compute_chi_squared(observed_df, wavelength_nm, contrast)
             label += f" ($\chi^2$ = {chi2_red:.2f})"
-        ax.plot(wavelength_um, contrast, label=label, alpha = 0.8)
+        ax.plot(wavelength_um, contrast, label=label, alpha=0.8)
 
     ax.plot(wavelength_um, contrast_bb, "--", color="black", label=f"BB, f = 2/3 ({T_planet:.0f} K)")
     ax.plot(wavelength_um, contrast_bb_full, "--", color="grey", label=f"BB, f = 1/4 ({T_planet:.0f} K)")
 
     if observed_df is not None:
-        ax.errorbar(
-            observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"],
-            fmt="o", color="blue", ecolor='gray', capsize=2, label="Observed"
-        )
+        ax.errorbar(observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"],
+                    fmt="o", color="blue", ecolor='gray', capsize=2, label="Observed")
 
     ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
     ax.set_ylabel("Contrast (ppm)", fontsize=13)
@@ -313,6 +260,7 @@ def plot_contrasts_multi_surface(
         print(f"Plot saved to {save_path}")
     else:
         plt.show()
+
 
 def plot_surface_albedo(surface_name: str, surface_dir: str, planet_name: str):
     """
@@ -344,7 +292,7 @@ def plot_surface_albedo(surface_name: str, surface_dir: str, planet_name: str):
     wavelength_um = df["wavelength_nm"] / 1000
 
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.plot(wavelength_um, df["albedo"],  color="dodgerblue")
+    ax.plot(wavelength_um, df["albedo"], color="dodgerblue")
     ax.set_xlabel(r"Wavelength ($\mu$m)", fontsize=13)
     ax.set_ylabel("Albedo", fontsize=13)
     ax.set_xlim(wavelength_um.min(), wavelength_um.max())
@@ -357,6 +305,7 @@ def plot_surface_albedo(surface_name: str, surface_dir: str, planet_name: str):
     plt.savefig(save_path)
     plt.close()
     print(f"[INFO] Albedo plot saved to {save_path}")
+
 
 def plot_multiple_surface_albedos(surface_names, surface_dir: str, planet_name: str):
     """

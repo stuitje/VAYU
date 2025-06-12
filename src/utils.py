@@ -56,7 +56,9 @@ def contrast_ppm(
     R_star_m: float,
     T_planet: Optional[float] = None,
     planet_flux: Optional[np.ndarray] = None,
-    stellar_spectrum: Optional[Union[np.ndarray, str]] = None) -> np.ndarray:
+    stellar_spectrum: Optional[Union[np.ndarray, str]] = None,
+    rescale : Optional[bool] = True,
+    T_spectrum: Optional[float] = 3300  ) -> np.ndarray:
 
     """
     Compute the planet-star contrast in ppm for either a blackbody planet
@@ -88,9 +90,6 @@ def contrast_ppm(
         # Load stellar file assuming: wavelength [nm], flux [erg/cm^2/s/nm at 1 AU]
         data = np.loadtxt(stellar_spectrum, comments = '#')
 
-        # Find stellar spectrum temperature
-        T_spectrum = fit_to_spectrum(data, R_star_m)
-
         stellar_wl = data[:, 0]
         stellar_flux = data[:, 1]
 
@@ -119,19 +118,16 @@ def contrast_ppm(
         star_flux = interp_func(wavelength_nm)
 
         # Rescale stellar flux to correct stellar temperature 
-        flux_bb_actual = planck(wavelength_nm, T_spectrum)
-        flux_bb_target = planck(wavelength_nm, T_star)
+        if rescale:
+            flux_bb_actual = planck(wavelength_nm, T_spectrum) 
+            flux_bb_target = planck(wavelength_nm, T_star) 
+            bb_scale = flux_bb_target / flux_bb_actual  # element-wise
+            star_flux *= bb_scale
 
-        bb_scale = flux_bb_target / flux_bb_actual  # element-wise
-        star_flux *= bb_scale
-        
     else:
         # Assume it's already a flux array matching wavelength_nm
         star_flux = np.array(stellar_spectrum)
 
-    
-
-    
 
     if planet_flux is None:
         planet_flux = planck(wavelength_nm, T_planet)
