@@ -41,10 +41,11 @@ def generate_blackbody_spectrum(
 
 def write_agni_config(
     planet_name: str,
-    atmosphere_name: str,
+    atmo_file: str,
     surface_name: str,
     tmp_surf: float,
-    distribution: str = "dayside"
+    distribution: str = "dayside",
+    atmo_mode: str = None
 ) -> None:
     df = pd.read_csv(CONFIG["planet_csv"])
     row = df[df["planet"].str.lower() == planet_name.lower()]
@@ -61,7 +62,7 @@ def write_agni_config(
     host_star = row["host"].lower()
 
     # Atmosphere
-    atmo_path = os.path.join(CONFIG["atmosphere_dir"], f"{atmosphere_name}.toml")
+    atmo_path = os.path.join(CONFIG["atmosphere_dir"], f"{atmo_file}.toml")
     p_surf, p_top, vmr_dict, transparent = load_atmosphere_toml(atmo_path)
     solver = "transparent" if transparent else "gauss"
     solution = 3 #if transparent else 0
@@ -74,12 +75,15 @@ def write_agni_config(
     else:
         surface_path = surface_name
 
+    if atmo_mode is None:
+        atmo_mode = atmo_file
+
     # Paths
-    config_name = f"{planet_name}_{surface_name}_{atmosphere_name}".lower()
+    config_name = f"{planet_name}_{surface_name}_{atmo_mode}".lower()
     config_dir = os.path.join(CONFIG["config_dir"], config_name)
     os.makedirs(config_dir, exist_ok=True)
 
-    agni_output_dir = os.path.join(CONFIG["output_dir"], planet_name, surface_name, atmosphere_name)
+    agni_output_dir = os.path.join(CONFIG["output_dir"], planet_name, surface_name, atmo_mode)
     os.makedirs(agni_output_dir, exist_ok=True)
 
     star_spectrum_path = os.path.join(CONFIG["stellar_spectra_dir"], f"{host_star}.txt")
@@ -101,8 +105,14 @@ def write_agni_config(
         zenith_angle = np.degrees(np.arccos(2/3))
     elif distribution == "full":
         zenith_angle = np.degrees(np.arccos(1/4))
+    elif distribution == "half":
+        zenith_angle = np.degrees(np.arccos(11/24))
+    elif distribution == "more":
+        zenith_angle = np.degrees(np.arccos(17/48))
+    elif distribution == "less":
+        zenith_angle = np.degrees(np.arccos(27/48))
     else:
-        raise ValueError("Invalid distribution mode. Choose from: 'substellar', 'dayside', 'full'")
+        raise ValueError("Invalid distribution mode. Choose from: 'substellar', 'dayside', 'full', 'half', 'more', 'less'")
 
     # TOML construction
     doc = document()
@@ -127,11 +137,11 @@ def write_agni_config(
     doc["planet"] = planet
 
     files = table()
-    if "O2" in atmosphere_name and all(x not in atmosphere_name for x in ["CO2", "SO2"]):
+    if "O2" in atmo_file and all(x not in atmo_file for x in ["CO2", "SO2"]):
         spectral_file = CONFIG["spectral_file_O2"]
-    elif "H2O" in atmosphere_name and all(x not in atmosphere_name for x in ["N2", "O2", "O3", "Si", "NH3", "CH4", "CO2", "SO2"]):
+    elif "H2O" in atmo_file and all(x not in atmo_file for x in ["N2", "O2", "O3", "Si", "NH3", "CH4", "CO2", "SO2"]):
         spectral_file = CONFIG["spectral_file_H2O"]
-    elif "Si" in atmosphere_name: 
+    elif "Si" in atmo_file: 
         spectral_file = CONFIG["spectral_file_Si"]
     else:
         spectral_file = CONFIG["spectral_file"]
@@ -169,7 +179,7 @@ def write_agni_config(
     exec_["overlap_method"] = "ee"
     exec_["real_gas"] = True
     exec_["thermo_funct"] = True
-    exec_["sensible_heat"] = False
+    exec_["sensible_heat"] = True 
     exec_["latent_heat"] = False
     exec_["convection"] = True
     exec_["rainout"] = False
