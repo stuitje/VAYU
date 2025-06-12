@@ -15,6 +15,22 @@ from dynesty import NestedSampler #This must be placed after importing load_agni
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CONFIG = toml.load(os.path.join(ROOT, "..", "agni_config.toml"))["paths"]
 
+def get_star_spectrum_info(planet_name: str):
+    star_name = planet_name[:-1]
+    star_path = os.path.join(ROOT, "..", "res", "stellar_spectra", f"{star_name}.txt")
+    star_path_sphinx = os.path.join(ROOT, "..", "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
+    if os.path.exists(star_path_sphinx):
+        star_path = star_path_sphinx
+
+    if star_name == 'gj486':
+        return star_path, True, 3300
+    elif star_name == 'gj367':
+        return star_path, True, 3500
+    elif star_name == 'trappist-1':
+        return star_path, False, None
+    else:
+        return star_path, True, None
+
 def log_likelihood(theta, obs_wavelength, obs_contrast, obs_error, model_wavelength, model_contrast):
     scale = theta[0]
     scaled_model = np.interp(obs_wavelength, model_wavelength, model_contrast * scale)
@@ -48,12 +64,7 @@ def compare_models(planet_name, surfaces, atmospheres, use_greybody_reference=Fa
     R_star = pdata["star_radius"] * r_sun
     R_planet = pdata["planet_radius"] * r_earth
 
-    star_name = planet_name[:-1]
-    star_path = os.path.join(ROOT, "..", "res", "stellar_spectra", f"{star_name}.txt")
-    star_path_SPHINX = os.path.join(ROOT, "..", "res", "stellar_spectra", f"{star_name}_SPHINX.txt")
-
-    if os.path.exists(star_path_SPHINX):
-        star_path = star_path_SPHINX
+    star_path, rescale, T_spectrum = get_star_spectrum_info(planet_name)
 
     best_logZ = None
     reference_logZ = None
@@ -76,7 +87,9 @@ def compare_models(planet_name, surfaces, atmospheres, use_greybody_reference=Fa
                 R_planet_m=R_planet,
                 R_star_m=R_star,
                 planet_flux=data["ba_U_total"],
-                stellar_spectrum=star_path
+                stellar_spectrum=star_path,
+                rescale=rescale,
+                T_spectrum=T_spectrum
             )
 
             logZ = compute_log_evidence(data["bandcenter"], model_contrast, contrast_data)
@@ -108,7 +121,9 @@ def compare_models(planet_name, surfaces, atmospheres, use_greybody_reference=Fa
             R_planet_m=R_planet,
             R_star_m=R_star,
             T_planet=T_planet,
-            stellar_spectrum=star_path
+            stellar_spectrum=star_path,
+            rescale=rescale,
+            T_spectrum=T_spectrum
         )
 
         reference_logZ = compute_log_evidence(wavelengths, model_contrast, contrast_data)
@@ -124,8 +139,11 @@ def compare_models(planet_name, surfaces, atmospheres, use_greybody_reference=Fa
     df = pd.DataFrame(results)
 
     if write_to_csv:
-        df.to_csv(os.path.join(CONFIG["output_dir"], planet_name, "bayes_model_comparison.csv"), index=False)
+        output_path = os.path.join(CONFIG["output_dir"], planet_name, "bayes_model_comparison.csv")
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        df.to_csv(output_path, index=False)
         print(f"[DONE] Results written to bayes_model_comparison.csv")
+
     return df
 
 if __name__ == "__main__":
