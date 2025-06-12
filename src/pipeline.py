@@ -18,7 +18,6 @@ from src.utils import compute_equilibrium_temperature, compute_dayside_brightnes
 from src.dataloader import load_agni_output, load_contrast_data, get_planet_data
 from src.chi2_table import generate_chi2_table, write_chi2_table
 
-# Load path config
 ROOT = os.path.dirname(os.path.abspath(__file__))
 CONFIG = toml.load(os.path.join(ROOT, "..", "agni_config.toml"))["paths"]
 
@@ -35,17 +34,16 @@ def get_atmospheres():
     )
 
 def main():
-
     start_time = time.time()
 
     parser = argparse.ArgumentParser(description="Run AGNI + plot for planet/surface/atmo setup.")
     parser.add_argument("planet")
     parser.add_argument("-s", "--surface", required=True, help="'all', 'list', or surface name")
     parser.add_argument("-a", "--atmosphere", required=True, help="'all', 'list', or atmosphere name")
-    parser.add_argument("-T", choices=["dayside", "substellar", "full"], default="dayside",help="Select temperature model for initial surface temperature: 'substellar' (no redistribution), 'dayside' (default), or 'full' (full redistribution)")
+    parser.add_argument("-T", choices=["dayside", "substellar", "full", "half", "more", "less"], default="dayside", help="Temperature model")
     parser.add_argument("--no-run", action="store_true", help="Skip config + AGNI run and just process existing output.")
-    parser.add_argument( "--flux-only", action="store_true", help="Only generate flux plots for individual configs. Skip contrast comparisons.")
-    
+    parser.add_argument("--flux-only", action="store_true", help="Only generate flux plots for individual configs. Skip contrast comparisons.")
+
     args = parser.parse_args()
 
     flux_mode = args.flux_only
@@ -58,52 +56,28 @@ def main():
     pdata = get_planet_data(args.planet)
     T_star, R_star, R_planet = pdata["star_temp"], pdata["star_radius"], pdata["planet_radius"]
 
-    # Select redistribution factor based on temperature model
-    if args.T == "substellar":
-        f_redis = 1.0
-    elif args.T == "full":
-        f_redis = 1/4
-    else:
-        f_redis = 2/3  # default: dayside average
+    redis_factors = {
+        "substellar": 1.0,
+        "full": 1/4,
+        "half": 11/24,
+        "more": 17/48,
+        "less": 27/48,
+        "dayside": 2/3
+    }
+    f_redis = redis_factors[args.T]
 
-    T_planet = compute_dayside_brightness_temperature(
-        stellar_temperature=T_star,        
-        stellar_radius_rsun=R_star,
-        distance_au=pdata["planet_a"],
-        bond_albedo=0,
-        redistribution_factor=f_redis
-    )
+    T_planet = compute_dayside_brightness_temperature(T_star, R_star, pdata["planet_a"], 0, f_redis)
+    T_planet_day = compute_dayside_brightness_temperature(T_star, R_star, pdata["planet_a"], 0, 2/3)
+    T_planet_full = compute_dayside_brightness_temperature(T_star, R_star, pdata["planet_a"], 0, 1/4)
 
-    T_planet_day = compute_dayside_brightness_temperature(
-        stellar_temperature=T_star,        
-        stellar_radius_rsun=R_star,
-        distance_au=pdata["planet_a"],
-        bond_albedo=0,
-        redistribution_factor=2/3
-    )
-    
-    T_planet_full = compute_dayside_brightness_temperature(
-        stellar_temperature = T_star,        
-        stellar_radius_rsun= R_star,
-        distance_au= pdata["planet_a"],
-        bond_albedo = 0,
-        redistribution_factor= 1/4
-        )
-
-    # Handle surface input
     if args.surface == "all":
         surfaces = get_surfaces()
     elif args.surface == "list":
         surfaces = toml.load(os.path.join(ROOT, "..", "surface_list.toml")).get("surfaces", [])
-        plot_multiple_surface_albedos(
-            surface_names=surfaces,
-            surface_dir=CONFIG["surface_dir"],
-            planet_name=args.planet
-        )
+        plot_multiple_surface_albedos(surfaces, CONFIG["surface_dir"], args.planet)
     else:
         surfaces = [args.surface]
 
-    # Handle atmosphere input
     if args.atmosphere == "all":
         atmospheres = get_atmospheres()
     elif args.atmosphere == "list":
@@ -111,35 +85,32 @@ def main():
     else:
         atmospheres = [args.atmosphere]
 
-    # Main AGNI loop
     for surface in surfaces:
-
-        plot_surface_albedo(
-        surface_name=surface,
-        surface_dir=CONFIG["surface_dir"],
-        planet_name=args.planet)
-        
+        plot_surface_albedo(surface, CONFIG["surface_dir"], args.planet)
         fluxes = {}
         wavelengths = None
 
         for atmo in atmospheres:
+            atmo_file = atmo
+            atmo_mode = f"{atmo}_{args.T}" if args.T != "dayside" else atmo
+
             if not args.no_run:
-                write_agni_config(args.planet, atmo, surface, T_planet, args.T)
-                config_dir = os.path.join(CONFIG["config_dir"], f"{args.planet}_{surface}_{atmo}".lower())
+                write_agni_config(args.planet, atmo_file, surface, T_planet, args.T, atmo_mode=atmo_mode)
+                config_dir = os.path.join(CONFIG["config_dir"], f"{args.planet}_{surface}_{atmo_mode}".lower())
                 config_file = os.path.join(config_dir, "config.toml")
-                print(f"Running AGNI for {surface}, {atmo}")
+                print(f"Running AGNI for {surface}, {atmo}, mode={args.T}")
                 subprocess.run(["julia", "AGNI/agni.jl", config_file])
             else:
-                print(f"[SKIP] Skipping config and AGNI run for {surface}, {atmo}")
+                print(f"[SKIP] Skipping config and AGNI run for {surface}, {atmo_mode}")
 
-            nc_path = os.path.join(CONFIG["output_dir"], args.planet, surface, atmo, "atm.nc")
+            nc_path = os.path.join(CONFIG["output_dir"], args.planet, surface, atmo_mode, "atm.nc")
             if os.path.isfile(nc_path):
                 data = load_agni_output(nc_path)
 
                 if not flux_mode:
                     if wavelengths is None:
                         wavelengths = data["bandcenter"]
-                    fluxes[atmo] = data["ba_U_total"]
+                    fluxes[atmo_mode] = data["ba_U_total"]
 
                 plot_bandflux_and_contrast(
                     wavelength_nm=data["bandcenter"],
@@ -147,14 +118,14 @@ def main():
                     planet_flux_sw=data["ba_U_SW"],
                     T_planet=T_planet_day,
                     T_planet_full=T_planet_full,
-                    T_surf = data["tmp_surf"],
+                    T_surf=data["tmp_surf"],
                     T_star=T_star,
                     R_planet_rearth=R_planet,
                     R_star_rsun=R_star,
                     observed_df=contrast_data,
                     planet_name=args.planet,
                     surface=surface,
-                    atmosphere_key=atmo
+                    atmosphere_key=atmo_mode
                 )
             else:
                 print(f"[SKIP] No output found: {nc_path}")
@@ -173,14 +144,14 @@ def main():
                 surface=surface
             )
 
-    # Multi-surface contrast plot 
     if args.surface == "list" and len(surfaces) > 1 and len(atmospheres) == 1 and not flux_mode:
         surface_fluxes = {}
         wavelengths = None
         atmo = atmospheres[0]
+        atmo_mode = f"{atmo}_{args.T}" if args.T != "dayside" else atmo
 
         for surface in surfaces:
-            nc_path = os.path.join(CONFIG["output_dir"], args.planet, surface, atmo, "atm.nc")
+            nc_path = os.path.join(CONFIG["output_dir"], args.planet, surface, atmo_mode, "atm.nc")
             if os.path.isfile(nc_path):
                 data = load_agni_output(nc_path)
                 if wavelengths is None:
@@ -198,10 +169,9 @@ def main():
                 R_planet_rearth=R_planet,
                 R_star_rsun=R_star,
                 planet_name=args.planet,
-                atmosphere_key=atmo
+                atmosphere_key=atmo_mode
             )
 
-    # Chi-squared results
     if contrast_data is not None:
         bare_results, atmo_results = generate_chi2_table(
             output_dir=CONFIG["output_dir"],
@@ -217,9 +187,8 @@ def main():
             bare_results=bare_results,
             atmo_results=atmo_results
         )
-    
-    end_time = time.time() 
-    elapsed_min = (end_time - start_time) / 60
+
+    elapsed_min = (time.time() - start_time) / 60
     print(f"\n[INFO] Total runtime: {elapsed_min:.2f} minutes")
 
 if __name__ == "__main__":
