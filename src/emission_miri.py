@@ -189,7 +189,7 @@ def main():
     df_atmo["Label"] = pd.Categorical(df_atmo["Label"], categories=ordered_labels, ordered=True)
     df_atmo = df_atmo.sort_values("Label")
 
-    scaling_factor = 11.5117  # From Trappist-1c
+    scaling_factor = 29.1741  # From Trappist-1c
     for filt in ["F1500W", "F1280W"]:
         df_surface[f"{filt}_uncert"] *= scaling_factor
         df_atmo[f"{filt}_uncert"] *= scaling_factor
