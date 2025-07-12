@@ -11,9 +11,32 @@ res/config/
 
 # Output files
 out/*
+!out/*/
+!out/**/*.csv
+out/**/prof_initial.csv
+out/**/*.nc
+out/**/*.toml
+out/**/.png
+out/**/greybody/
+out/**/a*/
+out/**/basalt*/
+out/**/d*/
+out/**/h*/
+out/**/l*/
+out/**/m*/
+out/*/g*/
+out/**/r*/
+out/*/t*/
+out/**/u*/
+out/**/s*/
+out/**/p*/
+
 runtime.sf
 runtime.sf_k
 socstar.dat
+
+# Images
+*.png
 
 # Misc files
 .DS_Store
