@@ -7,6 +7,7 @@ from matplotlib import rcParams
 import matplotlib.pyplot as plt
 from itertools import cycle
 
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.dataloader import load_agni_output, get_planet_data, load_contrast_data
@@ -106,13 +107,13 @@ def plot_surface_contrasts(
     delta_lnZ = {s: delta_lnZ[s] for s in available_surfaces}
 
     # Classification by Bayesian evidence
-    accepted = [s for s in delta_lnZ if delta_lnZ[s] >= -2]
-    rejected = [s for s in delta_lnZ if delta_lnZ[s] < -2]
+    accepted = [s for s in delta_lnZ if delta_lnZ[s] >= -3]
+    rejected = [s for s in delta_lnZ if delta_lnZ[s] < -3]
 
     # Setup coloring and linestyles
     n = len(delta_lnZ)
-    blue_cmap = plt.get_cmap('Blues', n+1)
-    red_cmap = plt.get_cmap('Reds', n+4)
+    blue_cmap = plt.get_cmap('Blues', n+2)
+    red_cmap = plt.get_cmap('Reds', n+6)
     LINESTYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2)), (0, (1, 1))]
     linestyle_cycle = cycle(LINESTYLES)
     highlight_surfaces = highlight_surfaces or [contrast_color_ref]
@@ -125,7 +126,7 @@ def plot_surface_contrasts(
     for i, surface in enumerate(all_surfaces):
 
         is_highlight = surface in highlight_surfaces
-        color = blue_cmap(i +2 )[:3] if surface_types[surface] == 'accepted' else red_cmap(i + 2)[:3]
+        color = blue_cmap(i +4 )[:3] if surface_types[surface] == 'accepted' else red_cmap(i + 2)[:3]
         lw = 3 if is_highlight else 2
         ls = next(linestyle_cycle)
         alpha = 0.9 if is_highlight else 0.7
@@ -184,8 +185,8 @@ def plot_surface_contrasts(
 
     ax.set_xlabel(r"Wavelength ($\mathrm{\mu}$m)")
     ax.set_ylabel("Contrast (ppm)")
-    ax.set_title(f"{planet.upper()} surfaces")
-    ax.set_ylim(10, 160)
+    ax.set_title(f"{planet.upper()}: surface models")
+    ax.set_ylim(50, 1250)
     ax.set_xlim(4, 12)
     ax.grid(alpha=0.3)
 
@@ -205,7 +206,7 @@ def plot_surface_contrasts(
     # Combine so highlights are first
     sorted_handles_labels = highlighted_handles_labels + other_handles_labels
     sorted_handles, sorted_labels = zip(*sorted_handles_labels)
-    ax.legend(sorted_handles, sorted_labels, fontsize=11, ncol=2)
+    ax.legend(sorted_handles, sorted_labels, fontsize=12, ncol=2, loc = 2)
 
 
     plt.tight_layout()
