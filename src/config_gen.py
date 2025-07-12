@@ -94,27 +94,29 @@ def write_agni_config(
         generate_blackbody_spectrum(fallback_teff, star_radius_rsun, fallback_path)
         input_star = fallback_path
 
-    instellation = (stellar_luminosity * l_sun) / (4 * np.pi * (distance_from_star * au) ** 2)
+    # Fixed zenith angle corresponding to arccos(2/3)
+    zenith_angle = np.degrees(np.arccos(2 / 3))
+
+    redistribution_map = {
+        "substellar": 1.0,
+        "dayside": 2/3,
+        "less": 27/48,
+        "half": 11/24,
+        "more": 17/48,
+        "full": 1/4
+    }
+
+    if distribution not in redistribution_map:
+        raise ValueError("Invalid distribution mode. Choose from: 'substellar', 'dayside', 'full', 'half', 'more', 'less'")
+    
+    f = redistribution_map[distribution]
+    raw_instellation = (stellar_luminosity * l_sun) / (4 * np.pi * (distance_from_star * au) ** 2)
+    instellation = raw_instellation * (3 / 2) * f
+
     gravity = (G * (planet_mass * m_earth)) / (planet_radius * r_earth) ** 2
     radius = planet_radius * r_earth
 
-    # Determine zenith angle based on distribution mode
-    if distribution == "substellar":
-        zenith_angle = 0.0
-    elif distribution == "dayside":
-        zenith_angle = np.degrees(np.arccos(2/3))
-    elif distribution == "full":
-        zenith_angle = np.degrees(np.arccos(1/4))
-    elif distribution == "half":
-        zenith_angle = np.degrees(np.arccos(11/24))
-    elif distribution == "more":
-        zenith_angle = np.degrees(np.arccos(17/48))
-    elif distribution == "less":
-        zenith_angle = np.degrees(np.arccos(27/48))
-    else:
-        raise ValueError("Invalid distribution mode. Choose from: 'substellar', 'dayside', 'full', 'half', 'more', 'less'")
-
-    # TOML construction
+    # Begin TOML construction
     doc = document()
     doc["title"] = config_name
 
@@ -170,7 +172,7 @@ def write_agni_config(
     exec_["clean_output"] = True
     exec_["verbosity"] = 1
     exec_["max_steps"] = 20000
-    exec_["max_runtime"] = 10000
+    exec_["max_runtime"] = 2000
     exec_["num_levels"] = 50
     exec_["continua"] = True
     exec_["rayleigh"] = True
@@ -185,10 +187,10 @@ def write_agni_config(
     exec_["rainout"] = False
     exec_["solution_type"] = solution
     exec_["solver"] = solver
-    exec_["dx_max"] = 50
+    exec_["dx_max"] = 100
     exec_["initial_state"] = ["iso", "1200"]
     exec_["linesearch"] = 0
-    exec_["easy_start"] = True
+    exec_["easy_start"] = False
     exec_["converge_atol"] = 1.0e-3
     exec_["converge_rtol"] = 1.0e-1
     doc["execution"] = exec_
