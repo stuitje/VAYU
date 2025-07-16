@@ -34,9 +34,8 @@ surface_labels = {
     "lunar_marebasalt": "Lunar mare basalt", "magnesium_sulphate": "Magnesium sulfate",
     "mars_basalticshergottite": "Martian basaltic shergottite", "mars_breccia": "Martian breccia",
     "norite": "Norite", "phonolite": "Phonolite", "pyrite": "Pyrite", "rhyolite": "Rhyolite",
-    "syenite": "Syenite", "tephrite": "Tephrite", "tholeiitic_basalt": "Tholeiitic basalt",
-    "trachy_andesite": "Trachyandesite", "trachy_basalt": "Trachybasalt", "trachyte": "Trachyte",
-    "ultramafic": "Peridotite "
+   "tephrite": "Tephrite", "tholeiitic_basalt": "Tholeiitic basalt",
+   "trachy_basalt": "Trachybasalt", "trachyte": "Trachyte"
 }
 
 def load_config():
@@ -50,7 +49,7 @@ def load_star_flux(wave_um, config, d_au):
     path = os.path.join(config["stellar_spectra_dir"], "gj367_SPHINX.txt")
     data = np.loadtxt(path, comments="#")
     wl_nm, flux_erg = data[:, 0], data[:, 1]
-    flux = np.interp(wave_um, wl_nm / 1000.0, flux_erg * 1e-3) * (1.0 / d_au)**2
+    flux = np.interp(wave_um, wl_nm / 1000.0, flux_erg) * (1.0 / d_au)**2
     return flux, path
 
 def process_surface(srf, output_dir, planet, atmosphere, wave_um, throughputs, T_planet, star_flux, Rp_m, d_m):
@@ -60,10 +59,10 @@ def process_surface(srf, output_dir, planet, atmosphere, wave_um, throughputs, T
         return None
 
     data = load_agni_output(nc_path)
-    flux_model = np.interp(wave_um, data["bandcenter"] / 1000, data["ba_U_total"] / 1000)
+    flux_model = np.interp(wave_um, data["bandcenter"] / 1000, data["ba_U_total"] * 1000)
     omega_planet = np.pi * (Rp_m / d_m)**2
     model_flux_earth = flux_model * omega_planet
-    bb_flux_earth = planck(wave_um * 1000, T_planet) * omega_planet / 1000
+    bb_flux_earth = planck(wave_um * 1000, T_planet) * omega_planet * 1000
 
     row = {"Surface": srf}
     for filt, tp in throughputs.items():
@@ -137,7 +136,7 @@ def plot_emission(df, planet, wave_um, T_star, T_planet, Rp_m, Rs_m, throughputs
     ax.set_xticklabels(df["Surface"].map(surface_labels).fillna(df["Surface"]), rotation=45, ha="right", fontsize=12)
     ax.set_ylabel("Emission relative to blackbody", fontsize=12)
     ax.set_title(f"{planet.upper()}: JWST MIRI emission, surface models", fontsize=17)
-    ax.set_ylim(0.4, 1.1)
+    ax.set_ylim(0, 1.2)
     ax.grid(True, alpha=0.3)
 
     # Final legend
@@ -156,17 +155,18 @@ def plot_emission(df, planet, wave_um, T_star, T_planet, Rp_m, Rs_m, throughputs
     print(f"Saved emission plot to {out_dir}")
 
 def main():
-    planet, atmosphere = "gj367b", "bare_rock"
+    planet, atmosphere = "trappist-1b", "bare_rock"
     wave_um = np.linspace(10.0, 20.0, 1000)
     config = load_config()
 
     pdata = get_planet_data(planet)
-    T_star, R_star, R_planet, d_au = pdata["star_temp"], pdata["star_radius"], pdata["planet_radius"], pdata["planet_a"]
-    d_m = d_au * c.au
+    T_star, R_star, R_planet, d_pc, a_au = pdata["star_temp"], pdata["star_radius"], pdata["planet_radius"], pdata["planet_d"], pdata["planet_a"]
+    d_m = d_pc * c.pc
+    d_au = d_m / c.au
     Rp_m = R_planet * c.r_earth
     Rs_m = R_star * c.r_sun
 
-    T_planet = compute_dayside_brightness_temperature(T_star, R_star, d_au, 0, 2 / 3)
+    T_planet = compute_dayside_brightness_temperature(T_star, R_star, a_au, 0, 2 / 3)
     print(f"Tplanet: {T_planet:.2f} K")
 
     throughputs = {
@@ -185,10 +185,10 @@ def main():
     df = pd.DataFrame(results).sort_values("F1280W")
 
     if planet != "trappist-1c":
-        scale = 29.1741
+        scale = 1/0.2087 # From Trappist-1c observation 
         print(f"Scaling uncertainties by {scale}")
         for f in ["F1280W", "F1500W"]:
-            df[f"{f}_uncert"] *= scale
+            df[f"{f}_uncert"] *= scale 
 
     plot_emission(df, planet, wave_um, T_star, T_planet, Rp_m, Rs_m, throughputs, config)
 
