@@ -18,6 +18,12 @@ from src.constants import r_earth, r_sun
 from src.stat import compute_chi_squared
 from src.atmosphere_labels import atmosphere_labels as atmo_labels_full
 
+def errorbar_with_faded_errors(ax, *args, error_alpha=1, **kwargs):
+    container = ax.errorbar(*args, **kwargs)
+    for bar in container[2]:
+        bar.set_alpha(error_alpha)
+    return container
+
 def resolve_path(path):
     return path if os.path.isabs(path) else os.path.join(ROOT, path)
 
@@ -70,21 +76,33 @@ def plot_atmosphere_contrasts(
     contrast_path = os.path.join(CONFIG["obs_data_dir"], f"{planet}_data.csv")
     observed_df = load_contrast_data(contrast_path)
 
-    bayes_csv = os.path.join(CONFIG["output_dir"], planet, "bayes_model_comparison.csv")
+    bayes_csv = os.path.join(CONFIG["output_dir"], planet, "bayes_model_comparison_atmo.csv")
     bayes_df = pd.read_csv(bayes_csv)
 
-    # Pressure filtering
+    # Pressure filtering with exclusion of very poor models (ΔlnZ < -50)
     if pressure_filter:
-        pressure_prefix = f"{pressure_filter}bar_"
+        pressure_prefixes = [f"{p}bar_" for p in pressure_filter.split('_')]
+
+        # Filter for valid models above the -50 threshold and matching the pressure prefixes
         filtered_df = bayes_df[
             (bayes_df["surface"] == surface_key) &
-            (bayes_df["atmosphere"].str.startswith(pressure_prefix))
+            (bayes_df["ΔlnZ"] > -30) &
+            (bayes_df["atmosphere"].apply(lambda x: any(x.startswith(prefix) for prefix in pressure_prefixes)))
         ].copy()
+
+        if filtered_df.empty:
+            print(f"[WARNING] No valid atmospheres found with ΔlnZ > -50 and pressure(s) {pressure_filter}")
+            return
+
+        # Sort and get best/worst
         filtered_df.sort_values("logZ", ascending=False, inplace=True)
         top3 = filtered_df.head(3)["atmosphere"].tolist()
         bottom3 = filtered_df.tail(3)["atmosphere"].tolist()
+
         atmo_keys = top3 + bottom3
-        highlight_atmospheres = [top3[0]]  # Best overall gets bold
+        highlight_atmospheres = [top3[0]]  # Highlight best
+
+
 
     delta_lnZ = {
         atmo: float(row["ΔlnZ"].values[0])
@@ -112,13 +130,15 @@ def plot_atmosphere_contrasts(
     available_atmospheres = set(model_contrasts)
     delta_lnZ = {a: delta_lnZ[a] for a in available_atmospheres}
 
-    accepted = [a for a in delta_lnZ if delta_lnZ[a] >= -2.3]
-    rejected = [a for a in delta_lnZ if delta_lnZ[a] < -2.3]
-    intermediate = [a for a in delta_lnZ if -2.3 <= delta_lnZ[a] < -1.2]
+    #intermediate = [a for a in delta_lnZ if -2.3 <= delta_lnZ[a] < -1.2]
+    accepted = [a for a in delta_lnZ if delta_lnZ[a] >= -3.0]
+    rejected = [a for a in delta_lnZ if delta_lnZ[a] < -3.0]
 
-    blue_cmap = plt.get_cmap('Blues', len(accepted)+1)
+
+    blue_cmap = plt.get_cmap('Blues', len(accepted)+2)
     red_cmap = plt.get_cmap('Reds', len(rejected)+10)
-    yellow_cmap = plt.get_cmap('YlOrRd', len(rejected)+10)
+    #yellow_cmap = plt.get_cmap('YlOrBr', len(intermediate)+4)
+
     LINESTYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2))]
     linestyle_cycle = cycle(LINESTYLES)
     highlight_atmospheres = highlight_atmospheres or [contrast_color_ref]
@@ -128,19 +148,22 @@ def plot_atmosphere_contrasts(
     normal_font = FontProperties(weight='normal', size=14)
     legend_handles, legend_labels, legend_fonts = [], [], []
 
-    all_atmospheres = accepted + rejected
-    model_types = {a: ('accepted' if a in accepted else 'rejected') for a in all_atmospheres}
+    all_atmospheres = accepted + rejected # + intermediate 
+    model_types = {
+        a: ('accepted' if a in accepted else 'rejected') #else 'intermediate' if a in intermediate 
+        for a in all_atmospheres
+    }
 
     for i, atmo in enumerate(all_atmospheres):
         is_highlight = atmo in highlight_atmospheres
         color = (
-            blue_cmap(i + 1) if model_types[atmo] == 'accepted' 
-            else red_cmap(i + 1) if model_types[atmo] == 'rejected' 
-            else yellow_cmap(i + 1)
+            blue_cmap(i + 1) if model_types[atmo] == 'accepted'
+            #else yellow_cmap(i + 1) if model_types[atmo] == 'intermediate'
+            else red_cmap(i + 1)
         )
         lw = 3 if is_highlight else 2
         ls = next(linestyle_cycle)
-        alpha = 0.9 if is_highlight else 0.7
+        alpha = 0.8 if is_highlight else 0.5
         zorder = 10 if is_highlight else 3
 
         chi2_str = ""
@@ -181,7 +204,7 @@ def plot_atmosphere_contrasts(
         bb_line, = ax.plot(
             bandcenter_bb / 1000, bb_contrast,
             color="black", linestyle="--", linewidth=2,
-            label=f"Blackbody (f=2/3, $T$={T_bb:.0f} K)", zorder=12
+            label=f"Blackbody (f=2/3, $T$={T_bb:.0f} K)", zorder=12, alpha = 1
         )
         legend_handles.append(bb_line)
         legend_labels.append(f"Blackbody (f=2/3, $T$={T_bb:.0f} K)")
@@ -189,25 +212,49 @@ def plot_atmosphere_contrasts(
 
     if observed_df is not None:
         obs = ax.errorbar(
-            observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"],
+            observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"], xerr = observed_df["ΔX"],
             fmt="o", color="black", elinewidth=1.5, capsize=3,
             label="Zhang et al. (2024)", zorder=100
         )
         legend_handles.append(obs)
-        legend_labels.append("Zhang et al. (2024)")
+        legend_labels.append("Weiner-Mansfield et al. (2024)")
         legend_fonts.append(normal_font)
 
     ax.set_xlabel(r"Wavelength ($\mathrm{\mu}$m)")
     ax.set_ylabel("Contrast (ppm)")
-    ax.set_title(f"{planet.upper()}: 100 bar atmospheres")
-    ax.set_ylim(10, 220)
-    ax.set_xlim(4, 12)
+    ax.set_title(f"{planet.upper()}: 1 bar atmospheres")
+    ax.set_ylim(35, 400)
+    ax.set_xlim(5, 12)
     ax.grid(alpha=0.3)
+
+    # Split legends: one for surface models, one for references
+    main_handles = legend_handles[:-2]
+    main_labels = legend_labels[:-2]
+    main_fonts = legend_fonts[:-2]
+
+    ref_handles = legend_handles[-2:]
+    ref_labels = legend_labels[-2:]
+    ref_fonts = legend_fonts[-2:]
+
+    # Left legend (surfaces)
+    #main_legend = Legend(ax, main_handles, main_labels, ncol=1, loc='upper left', frameon=False)
+    #for text_obj, font in zip(main_legend.get_texts(), main_fonts):
+    #    text_obj.set_fontproperties(font)
+   # ax.add_artist(main_legend)
 
     legend = Legend(ax, legend_handles, legend_labels, ncol=2, loc=2, frameon=False)
     for text_obj, font in zip(legend.get_texts(), legend_fonts):
         text_obj.set_fontproperties(font)
     ax.add_artist(legend)
+
+    # Right legend (blackbody + data)
+    #ref_legend = Legend(ax, ref_handles, ref_labels, ncol=1, loc='upper right', frameon=False)
+   #for text_obj, font in zip(ref_legend.get_texts(), ref_fonts):
+   #     text_obj.set_fontproperties(font)
+   # ax.add_artist(ref_legend)
+
+
+
 
     plt.tight_layout()
     save_path = os.path.join(CONFIG["output_dir"], planet, "atmo_contrast_bayes.png")
@@ -238,7 +285,7 @@ def plot_surface_contrasts(
     contrast_path = os.path.join(CONFIG["obs_data_dir"], f"{planet}_data.csv")
     observed_df = load_contrast_data(contrast_path)
 
-    bayes_csv = os.path.join(CONFIG["output_dir"], planet, "bayes_model_comparison.csv")
+    bayes_csv = os.path.join(CONFIG["output_dir"], planet, "bayes_model_comparison_surface.csv")
     bayes_df = pd.read_csv(bayes_csv)
 
     delta_lnZ = {
@@ -267,11 +314,14 @@ def plot_surface_contrasts(
     available_surfaces = set(model_contrasts)
     delta_lnZ = {s: delta_lnZ[s] for s in available_surfaces}
 
-    accepted = [s for s in delta_lnZ if delta_lnZ[s] >= -2.3]
-    rejected = [s for s in delta_lnZ if delta_lnZ[s] < -2.3]
+    accepted = [s for s in delta_lnZ if delta_lnZ[s] >= -1.6]
+    rejected = [s for s in delta_lnZ if delta_lnZ[s] < -3.0]
+    intermediate = [s for s in delta_lnZ if -3.0 <= delta_lnZ[s] < -1.6]
 
-    blue_cmap = plt.get_cmap('Blues', len(accepted)+2)
-    red_cmap = plt.get_cmap('Reds', len(rejected)+10)
+    blue_cmap = plt.get_cmap('Blues', len(accepted)+1)
+    red_cmap = plt.get_cmap('Reds', len(rejected)+12)
+    yellow_cmap = plt.get_cmap('YlOrBr', len(intermediate)+15)
+
     LINESTYLES = ['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (0, (5, 2))]
     linestyle_cycle = cycle(LINESTYLES)
     highlight_surfaces = highlight_surfaces or [contrast_color_ref]
@@ -281,15 +331,25 @@ def plot_surface_contrasts(
     normal_font = FontProperties(weight='normal', size=14)
     legend_handles, legend_labels, legend_fonts = [], [], []
 
-    all_surfaces = accepted + rejected
-    model_types = {s: ('accepted' if s in accepted else 'rejected') for s in all_surfaces}
+    all_surfaces = accepted  + rejected + intermediate
+    model_types = {
+        s: ('accepted' if s in accepted else 'intermediate' if s in intermediate else 'rejected' ) 
+        for s in all_surfaces
+    }
+
 
     for i, surface in enumerate(all_surfaces):
         is_highlight = surface in highlight_surfaces
+        color = (
+            blue_cmap(i + 1) if model_types[surface] == 'accepted'
+            else yellow_cmap(i + 1) if model_types[surface] == 'intermediate'
+            else red_cmap(i + 1)
+        )
+
         color = next(COLORS) # blue_cmap(i+1) if model_types[surface] == 'accepted' else red_cmap(i+1) 
         lw = 3 if is_highlight else 2
         ls = next(linestyle_cycle)
-        alpha = 0.9 if is_highlight else 0.7
+        alpha = 0.7 if is_highlight else 0.5
         zorder = 10 if is_highlight else 3
 
         chi2_str = ""
@@ -330,33 +390,36 @@ def plot_surface_contrasts(
         bb_line, = ax.plot(
             bandcenter_bb / 1000, bb_contrast,
             color="black", linestyle="--", linewidth=2,
-            label=f"Blackbody (f=2/3, $T$={T_bb:.0f} K)", zorder=12
+            label=f"Blackbody (f=2/3, $T$={T_bb:.0f} K)", zorder=12, alpha = 0.7
         )
         legend_handles.append(bb_line)
         legend_labels.append(f"Blackbody (f=2/3, $T$={T_bb:.0f} K)")
         legend_fonts.append(normal_font)
 
     if observed_df is not None:
-        obs = ax.errorbar(
-            observed_df["X"], observed_df["Y"], yerr=observed_df["ΔY"], xerr = observed_df["ΔX"],
+        obs = errorbar_with_faded_errors(
+            ax,
+            observed_df["X"], observed_df["Y"],
+            yerr=observed_df["ΔY"], xerr=observed_df["ΔX"],
             fmt="o", color="black", elinewidth=1.5, capsize=3,
-            label="Zieba et al. (2024)", zorder=100
+            label="Zhang et al. (2024)", zorder=100, alpha=1
         )
         legend_handles.append(obs)
-        legend_labels.append("Zieba et al. (2024)")
+        legend_labels.append("Zhang et al. (2024)")
         legend_fonts.append(normal_font)
 
     ax.set_xlabel(r"Wavelength ($\mathrm{\mu}$m)")
     ax.set_ylabel("Contrast (ppm)")
     ax.set_title(f"{planet.upper()}: surface models")
-    ax.set_ylim(0, 800)
-    ax.set_xlim(4, 20)
+    ax.set_ylim(30, 400)
+    ax.set_xlim(4.9, 12)
     ax.grid(alpha=0.3)
 
     legend = Legend(ax, legend_handles, legend_labels, ncol=2, loc=2, frameon=False)
     for text_obj, font in zip(legend.get_texts(), legend_fonts):
         text_obj.set_fontproperties(font)
     ax.add_artist(legend)
+
 
     plt.tight_layout()
     save_path = os.path.join(CONFIG["output_dir"], planet, "surface_contrast_bayes.png")
@@ -393,15 +456,14 @@ if __name__ == "__main__":
         )
     else:
         surface_labels = {
-            "ultramafic": "Peridodite",
-            "diorite": "Diorite",
-            "granite": "Granite",
-            "harzburgite": "Harzburgite",
-            "albite_dust": "Albite (dust)",
-            "trachyte": "Trachyte",
-            "magnesium_suplhate": "Magnesium sulfate",
-            "trachy_andesite": "Trachyandesite" 
+            "pyrite": "Pyrite",
+            "hematite": "Hematite",
+            "tephrite": "Tephrite",
+            "basalt_glass": "Basalt glass",
+            "phonolite": "Phonolite"
         }
+
+
         surface_keys = list(surface_labels.keys())
 
         plot_surface_contrasts(
