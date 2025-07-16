@@ -26,7 +26,7 @@ def load_stellar_flux(filepath, target_wave_um):
     flux_erg_cm2_s_nm = data[:, 1]
 
     # Convert erg/cm^2/s/nm -> W/m^2/micron
-    flux_W_m2_um = flux_erg_cm2_s_nm * 1e-3
+    flux_W_m2_um = flux_erg_cm2_s_nm
     wl_um = wl_nm / 1000.0
     return np.interp(target_wave_um, wl_um, flux_W_m2_um)
 
@@ -52,7 +52,7 @@ def get_throughput(wave_um, filter_name):
 def photon_rate(wave_um, flux_wm2um, throughput, atel=c.jwst_collecting_area):
     hc = c.planck_const * c.speed_of_light
     lam_m = wave_um * 1e-6
-    dlam = np.gradient(wave_um) * 1e-6
+    dlam = np.gradient(wave_um) 
     photons = flux_wm2um * dlam * lam_m / hc * throughput * atel
     return np.sum(photons)
 
@@ -63,13 +63,13 @@ def jwst_background(wave_um):
     temps = [5500., 270., 133.8, 71.0, 62.0, 51.7, 86.7]
     total = np.zeros_like(wave_um)
     for e, T in zip(emiss, temps):
-        total += e * planck(wave_um * 1000, T) * omega
+        total += e * planck(wave_um * 1000, T) * 1000 * omega  # nm^(-1) -> um^(-1)
     return total
 
 # SNR
 def compute_snr(wave_um, model_flux, star_flux, throughput,
                 tint_s=36.4*60, nout=4.0, atel=c.jwst_collecting_area,
-                thermal=True, n_eclipses=5):
+                thermal=True, n_eclipses=4):
     
     tint_total = tint_s * n_eclipses
     nout_total = nout * n_eclipses
@@ -99,18 +99,18 @@ def compute_snr(wave_um, model_flux, star_flux, throughput,
 def integrate_flux(wave_um, flux, throughput):
     return np.trapz(flux * throughput, wave_um)
 
-def compute_relative_emissions(nc_path, T_planet, wave_um, throughputs, star_flux, Rp_m, d_m, n_eclipses=5):
+def compute_relative_emissions(nc_path, T_planet, wave_um, throughputs, star_flux, Rp_m, d_m, n_eclipses=4):
     data = load_agni_output(nc_path)
     model_flux_nm = data["ba_U_total"]
     wl_model_nm = data["bandcenter"]
 
-    model_flux_um = model_flux_nm / 1000
-    wl_model_um = wl_model_nm / 1000
+    model_flux_um = model_flux_nm * 1000  # nm^(-1) -> um^(-1)
+    wl_model_um = wl_model_nm / 1000  # nm -> um
     interp_model = np.interp(wave_um, wl_model_um, model_flux_um)
 
     omega_planet = np.pi * (Rp_m / d_m)**2
     interp_model_earth = interp_model * omega_planet
-    bb_flux_earth = planck(wave_um * 1000, T_planet) * omega_planet / 1000
+    bb_flux_earth = planck(wave_um * 1000, T_planet) * omega_planet * 1000 # nm^(-1) -> um^(-1)
 
     results = {}
     for filt, tp in throughputs.items():
@@ -133,14 +133,16 @@ def main():
 
     pdata = get_planet_data(planet)
     T_star, R_star, R_planet = pdata["star_temp"], pdata["star_radius"], pdata["planet_radius"]
-    d_au = pdata["planet_a"]
-    d_m = d_au * c.au
+    d_pc = pdata["planet_d"]
+    d_m = d_pc * c.pc
+    d_au = d_m / c.au 
+    a_au = pdata["planet_a"]
     Rp_m = R_planet * c.r_earth
 
     T_planet = compute_dayside_brightness_temperature(
         stellar_temperature=T_star,
         stellar_radius_rsun=R_star,
-        distance_au=d_au,
+        distance_au=a_au,
         bond_albedo=0,
         redistribution_factor=2/3
     )
@@ -155,7 +157,7 @@ def main():
     # Load stellar spectrum
     stellar_flux_path = os.path.join(CONFIG["stellar_spectra_dir"], "gj486_SPHINX.txt")
     star_flux = load_stellar_flux(stellar_flux_path, wave_um)
-    star_flux *= (1.0 / d_au)**2
+    star_flux *= np.pi * (1.0 / d_au)**2
 
     # Surface
     surfaces = [f.replace(".dat", "") for f in os.listdir(surface_dir) if f.endswith(".dat")]
@@ -179,6 +181,7 @@ def main():
         nc_path = os.path.join(output_dir, planet, surface, atmo, "atm.nc")
         if os.path.exists(nc_path):
             emissions = compute_relative_emissions(nc_path, T_planet, wave_um, throughputs, star_flux, Rp_m, d_m)
+            print(emissions)
             results_atmo.append({"Atmosphere": atmo, **emissions})
         else:
             print(f"[WARNING] Missing: {nc_path}")
@@ -189,7 +192,7 @@ def main():
     df_atmo["Label"] = pd.Categorical(df_atmo["Label"], categories=ordered_labels, ordered=True)
     df_atmo = df_atmo.sort_values("Label")
 
-    scaling_factor = 29.1741  # From Trappist-1c
+    scaling_factor = 1/0.2924 # From Trappist-1c observation
     for filt in ["F1500W", "F1280W"]:
         df_surface[f"{filt}_uncert"] *= scaling_factor
         df_atmo[f"{filt}_uncert"] *= scaling_factor
