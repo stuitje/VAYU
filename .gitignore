@@ -16,6 +16,7 @@ out/*
 out/**/prof_initial.csv
 out/**/*.nc
 out/**/*.toml
+out/**/*.txt
 out/**/.png
 out/**/greybody/
 out/**/a*/
@@ -30,6 +31,7 @@ out/*/t*/
 out/**/u*/
 out/**/s*/
 out/**/p*/
+out/**/n*/
 
 runtime.sf
 runtime.sf_k
