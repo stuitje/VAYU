@@ -157,7 +157,7 @@ def main():
     # Load stellar spectrum
     stellar_flux_path = os.path.join(CONFIG["stellar_spectra_dir"], "gj486_SPHINX.txt")
     star_flux = load_stellar_flux(stellar_flux_path, wave_um)
-    star_flux *= np.pi * (1.0 / d_au)**2
+    star_flux *= (1.0 / d_au)**2  # to earth distance
 
     # Surface
     surfaces = [f.replace(".dat", "") for f in os.listdir(surface_dir) if f.endswith(".dat")]
@@ -192,7 +192,7 @@ def main():
     df_atmo["Label"] = pd.Categorical(df_atmo["Label"], categories=ordered_labels, ordered=True)
     df_atmo = df_atmo.sort_values("Label")
 
-    scaling_factor = 1/0.2924 # From Trappist-1c observation
+    scaling_factor = 1/0.2087 # From Trappist-1c observation
     for filt in ["F1500W", "F1280W"]:
         df_surface[f"{filt}_uncert"] *= scaling_factor
         df_atmo[f"{filt}_uncert"] *= scaling_factor
