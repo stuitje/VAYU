@@ -122,7 +122,7 @@ def contrast_ppm(
             flux_bb_actual = planck(wavelength_nm, T_spectrum) 
             flux_bb_target = planck(wavelength_nm, T_star) 
             bb_scale = flux_bb_target / flux_bb_actual  # element-wise
-            star_flux *= bb_scale
+            star_flux *= 1 #bb_scale
 
     else:
         # Assume it's already a flux array matching wavelength_nm
@@ -165,12 +165,6 @@ def compute_equilibrium_temperature(
 
     T_eq = ((1 - bond_albedo) * L_star / (16 * np.pi * stefan_boltzmann * d_m**2 * redistribution_factor))**0.25
     return T_eq
-
-import numpy as np
-
-# Constants
-au = 1.496e11  # Astronomical unit in meters
-r_sun = 6.957e8  # Solar radius in meters
 
 def compute_dayside_brightness_temperature(
     stellar_temperature: float,
