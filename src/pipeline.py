@@ -94,16 +94,20 @@ def main():
             atmo_file = atmo
             atmo_mode = f"{atmo}_{args.T}" if args.T != "dayside" else atmo
 
+            nc_path = os.path.join(CONFIG["output_dir"], args.planet, surface, atmo_mode, "atm.nc")
+
             if not args.no_run:
-                write_agni_config(args.planet, atmo_file, surface, T_planet, args.T, atmo_mode=atmo_mode)
-                config_dir = os.path.join(CONFIG["config_dir"], f"{args.planet}_{surface}_{atmo_mode}".lower())
-                config_file = os.path.join(config_dir, "config.toml")
-                print(f"Running AGNI for {surface}, {atmo}, mode={args.T}")
-                subprocess.run(["julia", "AGNI/agni.jl", config_file])
+                if os.path.isfile(nc_path):
+                    print(f"[SKIP] AGNI output already exists for {surface}, {atmo_mode}. Skipping run.")
+                else:
+                    write_agni_config(args.planet, atmo_file, surface, T_planet, args.T, atmo_mode=atmo_mode)
+                    config_dir = os.path.join(CONFIG["config_dir"], f"{args.planet}_{surface}_{atmo_mode}".lower())
+                    config_file = os.path.join(config_dir, "config.toml")
+                    print(f"Running AGNI for {surface}, {atmo}, mode={args.T}")
+                    subprocess.run(["julia", "AGNI/agni.jl", config_file])
             else:
                 print(f"[SKIP] Skipping config and AGNI run for {surface}, {atmo_mode}")
 
-            nc_path = os.path.join(CONFIG["output_dir"], args.planet, surface, atmo_mode, "atm.nc")
             if os.path.isfile(nc_path):
                 data = load_agni_output(nc_path)
 
