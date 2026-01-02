@@ -30,8 +30,8 @@ data = np.loadtxt('../res/stellar_spectra/gj486_SPHINX.txt', comments='#')
 wavelength = data[:, 0]
 flux = data[:, 1]  # erg/s/cm^2/nm at 1 AU
 
-# Fit only in the region of interest (e.g., 5000–20000 nm)
-mask = (wavelength >= 5000) & (wavelength <= 20000)
+# Fit in the region of interest (e.g., 5000–20000 nm)
+mask = (wavelength >= 1) & (wavelength <= 20000)
 wavelength_fit = wavelength[mask]
 flux_fit = flux[mask]
 
@@ -41,7 +41,7 @@ best_fit_temp = popt[0]
 print(f"Best-fit temperature: {best_fit_temp:.2f} K")
 
 # Compute blackbody flux with original guess
-T_star = 3000
+T_star = 3317
 R_star = 0.3243 * R_sun  # meters
 bb_flux_surface = planck(wavelength, T_star)
 dilution_factor = (R_star / AU) ** 2
@@ -54,11 +54,10 @@ bb_fit_flux = planck_diluted(wavelength, best_fit_temp)
 # Plotting
 plt.figure(figsize=(10, 6))
 plt.plot(wavelength, flux, label='GJ486 Spectrum (1 AU)')
-plt.plot(wavelength, bb_flux_1au_cgs, ':', label='Blackbody (3000 K)')
+plt.plot(wavelength, bb_flux_1au_cgs, ':', label='Blackbody (3317 K)')
 plt.plot(wavelength, bb_fit_flux, '--', label=f'Best-fit Blackbody ({best_fit_temp:.0f} K)')
 plt.xlabel('Wavelength (nm)')
-plt.xlim(5000, 20000)
-plt.ylim(0, 1)
+plt.xlim(100, 20000)
 plt.ylabel('Flux (erg/s/cm^2/nm)')
 plt.title('Spectrum of GJ486 at 1 AU vs. blackbody fit')
 plt.grid(True)
