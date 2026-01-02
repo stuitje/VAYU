@@ -41,6 +41,7 @@ socstar.dat
 
 # Images
 *.png
+*.pdf
 
 # Misc files
 .DS_Store
