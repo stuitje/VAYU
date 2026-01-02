@@ -26,6 +26,7 @@ This project allows the user to:
 VAYU/
 │
 ├── AGNI/                     # Julia-based AGNI radiative transfer engine
+├── misc/                     # Miscellaneous files
 ├── res/    
 │   ├── atmospheres/          # Basic atmosphere composition TOMLs  
 │   ├── config/               # Generated AGNI configuration TOMLs
@@ -34,6 +35,7 @@ VAYU/
 │   └── surfaces/             # Surface albedo files (.dat)
 │
 ├── out/                      # Model results and plots saved here (per planet)
+├── plt/                      # Additional plotting scripts, primarily used for my thesis
 ├── src/
 │   ├── atmosphere_labels.py  # Labels for atmosphere keys
 │   ├── chi2_table.py         # Creates chi-2 summary table
