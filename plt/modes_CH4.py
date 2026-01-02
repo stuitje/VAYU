@@ -7,6 +7,7 @@ import toml
 import numpy as np
 import matplotlib.colors as mcolors
 import matplotlib.ticker as ticker
+import matplotlib.patheffects as patheffects
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(ROOT)
@@ -27,11 +28,11 @@ if __name__ == "__main__":
     reuse_existing = True
 
     atmospheres = {
-        "100bar_CO2": 100,
-        "10bar_CO2": 10,
-        "1bar_CO2": 1.0,
-        "01bar_CO2": 0.1,
-        "001bar_CO2": 0.01
+        "100bar_CH4": 100,
+        "10bar_CH4": 10,
+        "1bar_CH4": 1.0,
+        "01bar_CH4": 0.1,
+        "001bar_CH4": 0.01
     }
 
     redistribution_modes = {
@@ -97,14 +98,14 @@ if __name__ == "__main__":
 
     bayes_vals = merged_df["bayes_factor"].values
     log_bayes_vals = np.log10(bayes_vals)
-    norm = mcolors.TwoSlopeNorm(vcenter=-5, vmin=-10, vmax=0)
+    norm = mcolors.TwoSlopeNorm(vcenter=-7, vmin=-14, vmax=0)
 
     scatter = ax.scatter(
         merged_df["f_factor"],
         merged_df["pressure_bar"],
         c=log_bayes_vals,
         cmap="Reds_r",
-        s=400,
+        s=800,
         edgecolors='k',
         norm=norm
     )
@@ -122,6 +123,19 @@ if __name__ == "__main__":
         norm=norm
     )
 
+        # Add text labels for log10(bayes_factor)
+    for i, row in merged_df.iterrows():
+        ax.text(
+            row["f_factor"],
+            row["pressure_bar"],
+            f"{log_bayes_vals[i]:.1f}",
+            ha='center',
+            va='center',
+            fontsize=10,
+            color='white',
+            path_effects=[patheffects.withStroke(linewidth=1.5, foreground="black")]
+        )
+
     # Set x-ticks as fractions
     factors = sorted(set(redistribution_modes.values()))
     fraction_labels = {
@@ -135,17 +149,20 @@ if __name__ == "__main__":
     ax.set_xticklabels([fraction_labels[f] for f in factors])
 
     ax.set_xlabel("$f$ factor (redistribution)", fontsize=16)
-    ax.set_ylabel("CO$_2$ pressure (bar)", fontsize=16)
+    ax.set_ylabel("CH$_4$ pressure (bar)", fontsize=16)
     ax.set_yscale("log")
-    ax.set_title("CO$_2$", fontsize=20)
+    ax.set_title("CH$_4$", fontsize=20)
     ax.grid(True, alpha=0.3)
+
+    ymin, ymax = ax.get_ylim()
+    ax.set_ylim(ymin / 1.2, ymax * 1.2) 
 
     cbar = plt.colorbar(scatter, ax=ax)
     cbar.set_label("Bayes factor w.r.t. pyrite (log scale)", fontsize=14)
     cbar.ax.tick_params(labelsize=11)
 
     plt.tight_layout()
-    plot_path = os.path.join(OUTPUT_DIR, planet, f"{planet}_bayes_comparison_plot_CO2.pdf")
+    plot_path = os.path.join(OUTPUT_DIR, planet, f"{planet}_bayes_comparison_plot_CH4.pdf")
     plt.savefig(plot_path, format = 'pdf', dpi=300)
     print(f"\n[INFO] Plot saved to {plot_path}")
 

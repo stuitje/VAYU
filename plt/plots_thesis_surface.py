@@ -217,13 +217,13 @@ def plot_atmosphere_contrasts(
             label="Zhang et al. (2024)", zorder=100
         )
         legend_handles.append(obs)
-        legend_labels.append("Weiner-Mansfield et al. (2024)")
+        legend_labels.append("Zhang et al. (2024)")
         legend_fonts.append(normal_font)
 
     ax.set_xlabel(r"Wavelength ($\mathrm{\mu}$m)")
     ax.set_ylabel("Contrast (ppm)")
-    ax.set_title(f"{planet.upper()}: 1 bar atmospheres")
-    ax.set_ylim(35, 400)
+    ax.set_title(f"{planet.upper()}: 100 bar atmospheres")
+    ax.set_ylim(35, 170)
     ax.set_xlim(5, 12)
     ax.grid(alpha=0.3)
 
@@ -237,29 +237,27 @@ def plot_atmosphere_contrasts(
     ref_fonts = legend_fonts[-2:]
 
     # Left legend (surfaces)
-    #main_legend = Legend(ax, main_handles, main_labels, ncol=1, loc='upper left', frameon=False)
-    #for text_obj, font in zip(main_legend.get_texts(), main_fonts):
-    #    text_obj.set_fontproperties(font)
-   # ax.add_artist(main_legend)
-
-    legend = Legend(ax, legend_handles, legend_labels, ncol=2, loc=2, frameon=False)
-    for text_obj, font in zip(legend.get_texts(), legend_fonts):
+    main_legend = Legend(ax, main_handles, main_labels, ncol=1, loc='upper left', frameon=False)
+    for text_obj, font in zip(main_legend.get_texts(), main_fonts):
         text_obj.set_fontproperties(font)
-    ax.add_artist(legend)
+    ax.add_artist(main_legend)
 
-    # Right legend (blackbody + data)
-    #ref_legend = Legend(ax, ref_handles, ref_labels, ncol=1, loc='upper right', frameon=False)
-   #for text_obj, font in zip(ref_legend.get_texts(), ref_fonts):
+    #legend = Legend(ax, legend_handles, legend_labels, ncol=2, loc=2, frameon=False)
+   # for text_obj, font in zip(legend.get_texts(), legend_fonts):
    #     text_obj.set_fontproperties(font)
-   # ax.add_artist(ref_legend)
+    #ax.add_artist(legend)
 
-
+    #Right legend (blackbody + data)
+    ref_legend = Legend(ax, ref_handles, ref_labels, ncol=1, loc='upper right', frameon=False)
+    for text_obj, font in zip(ref_legend.get_texts(), ref_fonts):
+        text_obj.set_fontproperties(font)
+    ax.add_artist(ref_legend)
 
 
     plt.tight_layout()
-    save_path = os.path.join(CONFIG["output_dir"], planet, "atmo_contrast_bayes.png")
+    save_path = os.path.join(CONFIG["output_dir"], planet, "atmo_contrast_bayes.pdf")
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    plt.savefig(save_path, bbox_inches='tight')
+    plt.savefig(save_path, format="pdf", bbox_inches='tight')
     print(f"Plot saved to {save_path}")
     plt.show()
 
@@ -346,7 +344,7 @@ def plot_surface_contrasts(
             else red_cmap(i + 1)
         )
 
-        color = next(COLORS) # blue_cmap(i+1) if model_types[surface] == 'accepted' else red_cmap(i+1) 
+        color = blue_cmap(i+1) if model_types[surface] == 'accepted' else red_cmap(i+1) #next(COLORS) 
         lw = 3 if is_highlight else 2
         ls = next(linestyle_cycle)
         alpha = 0.7 if is_highlight else 0.5
@@ -411,20 +409,42 @@ def plot_surface_contrasts(
     ax.set_xlabel(r"Wavelength ($\mathrm{\mu}$m)")
     ax.set_ylabel("Contrast (ppm)")
     ax.set_title(f"{planet.upper()}: surface models")
-    ax.set_ylim(30, 400)
+    ax.set_ylim(30, 170)
     ax.set_xlim(4.9, 12)
     ax.grid(alpha=0.3)
 
-    legend = Legend(ax, legend_handles, legend_labels, ncol=2, loc=2, frameon=False)
-    for text_obj, font in zip(legend.get_texts(), legend_fonts):
+    # Split legends: one for surface models, one for references
+    main_handles = legend_handles[:-2]
+    main_labels = legend_labels[:-2]
+    main_fonts = legend_fonts[:-2]
+
+    ref_handles = legend_handles[-2:]
+    ref_labels = legend_labels[-2:]
+    ref_fonts = legend_fonts[-2:]
+
+    # Left legend (surfaces)
+    main_legend = Legend(ax, main_handles, main_labels, ncol=1, loc='upper left', frameon=False)
+    for text_obj, font in zip(main_legend.get_texts(), main_fonts):
         text_obj.set_fontproperties(font)
-    ax.add_artist(legend)
+    ax.add_artist(main_legend)
+
+    #legend = Legend(ax, legend_handles, legend_labels, ncol=2, loc=2, frameon=False)
+    #for text_obj, font in zip(legend.get_texts(), legend_fonts):
+    #    text_obj.set_fontproperties(font)
+   # ax.add_artist(legend)
+
+    #Right legend (blackbody + data)
+    ref_legend = Legend(ax, ref_handles, ref_labels, ncol=1, loc='upper right', frameon=False)
+    for text_obj, font in zip(ref_legend.get_texts(), ref_fonts):
+        text_obj.set_fontproperties(font)
+    ax.add_artist(ref_legend)
+
 
 
     plt.tight_layout()
-    save_path = os.path.join(CONFIG["output_dir"], planet, "surface_contrast_bayes.png")
+    save_path = os.path.join(CONFIG["output_dir"], planet, "surface_contrast_bayes.pdf")
     os.makedirs(os.path.dirname(save_path), exist_ok=True)
-    plt.savefig(save_path, bbox_inches='tight')
+    plt.savefig(save_path, format="pdf", bbox_inches='tight')
     print(f"Plot saved to {save_path}")
     plt.show()
 
@@ -457,10 +477,12 @@ if __name__ == "__main__":
     else:
         surface_labels = {
             "pyrite": "Pyrite",
-            "hematite": "Hematite",
             "tephrite": "Tephrite",
+            "basalt_small": "Basalt small",
             "basalt_glass": "Basalt glass",
-            "phonolite": "Phonolite"
+            "albite_dust": "Albite dust",
+            "magnesium_sulphate": "Magnesium sulfate",
+            "mars_breccia": "Martian breccia"
         }
 
 

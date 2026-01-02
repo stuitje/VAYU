@@ -27,11 +27,11 @@ if __name__ == "__main__":
     reuse_existing = True
 
     atmospheres = {
-        "100bar_CO2": 100,
-        "10bar_CO2": 10,
-        "1bar_CO2": 1.0,
-        "01bar_CO2": 0.1,
-        "001bar_CO2": 0.01
+        "100bar_SO2": 100,
+        "10bar_SO2": 10,
+        "1bar_SO2": 1.0,
+        "01bar_SO2": 0.1,
+        "001bar_SO2": 0.01
     }
 
     redistribution_modes = {
@@ -97,7 +97,7 @@ if __name__ == "__main__":
 
     bayes_vals = merged_df["bayes_factor"].values
     log_bayes_vals = np.log10(bayes_vals)
-    norm = mcolors.TwoSlopeNorm(vcenter=-5, vmin=-10, vmax=0)
+    norm = mcolors.TwoSlopeNorm(vcenter=-15, vmin=-30, vmax=0)
 
     scatter = ax.scatter(
         merged_df["f_factor"],
@@ -106,19 +106,6 @@ if __name__ == "__main__":
         cmap="Reds_r",
         s=400,
         edgecolors='k',
-        norm=norm
-    )
-
-    # Highlight points with ΔlnZ >= -3
-    highlight_mask = merged_df["ΔlnZ"] >= -3
-    ax.scatter(
-        merged_df.loc[highlight_mask, "f_factor"],
-        merged_df.loc[highlight_mask, "pressure_bar"],
-        c=log_bayes_vals[highlight_mask],
-        cmap="Reds_r",
-        s=400,
-        edgecolors='gold',
-        linewidths=1.5,
         norm=norm
     )
 
@@ -135,9 +122,9 @@ if __name__ == "__main__":
     ax.set_xticklabels([fraction_labels[f] for f in factors])
 
     ax.set_xlabel("$f$ factor (redistribution)", fontsize=16)
-    ax.set_ylabel("CO$_2$ pressure (bar)", fontsize=16)
+    ax.set_ylabel("SO$_2$ pressure (bar)", fontsize=16)
     ax.set_yscale("log")
-    ax.set_title("CO$_2$", fontsize=20)
+    ax.set_title("SO$_2$", fontsize=20)
     ax.grid(True, alpha=0.3)
 
     cbar = plt.colorbar(scatter, ax=ax)
@@ -145,7 +132,7 @@ if __name__ == "__main__":
     cbar.ax.tick_params(labelsize=11)
 
     plt.tight_layout()
-    plot_path = os.path.join(OUTPUT_DIR, planet, f"{planet}_bayes_comparison_plot_CO2.pdf")
+    plot_path = os.path.join(OUTPUT_DIR, planet, f"{planet}_bayes_comparison_plot_SO2.pdf")
     plt.savefig(plot_path, format = 'pdf', dpi=300)
     print(f"\n[INFO] Plot saved to {plot_path}")
 

@@ -27,11 +27,11 @@ if __name__ == "__main__":
     reuse_existing = True
 
     atmospheres = {
-        "100bar_CO2": 100,
-        "10bar_CO2": 10,
-        "1bar_CO2": 1.0,
-        "01bar_CO2": 0.1,
-        "001bar_CO2": 0.01
+        "100bar_H2O": 100,
+        "10bar_H2O": 10,
+        "1bar_H2O": 1.0,
+        "01bar_H2O": 0.1,
+        "001bar_H2O": 0.01
     }
 
     redistribution_modes = {
@@ -90,19 +90,23 @@ if __name__ == "__main__":
     merged_df["bayes_factor"] = merged_df["bayes_factor"].fillna(1e-3)
 
     summary_df = merged_df[["atmosphere", "mode", "logZ", "ΔlnZ", "bayes_factor"]].sort_values("ΔlnZ", ascending=False)
-    print("\nBayesian Model Comparison Summary:")
+    print("\nBayesian model comparison summary:")
     print(summary_df.to_string(index=False, float_format="{:.2f}".format))
 
     fig, ax = plt.subplots(figsize=(8, 6))
 
+    # Compute values
     bayes_vals = merged_df["bayes_factor"].values
     log_bayes_vals = np.log10(bayes_vals)
-    norm = mcolors.TwoSlopeNorm(vcenter=-5, vmin=-10, vmax=0)
+    #norm = mcolors.TwoSlopeNorm(vcenter=0.5, vmin=0, vmax=1)
+    norm = mcolors.TwoSlopeNorm(vcenter=-4, vmin=-8, vmax=0)
 
+    # Plot all markers
     scatter = ax.scatter(
         merged_df["f_factor"],
         merged_df["pressure_bar"],
-        c=log_bayes_vals,
+        c= log_bayes_vals,
+        #cmap="RdBu",
         cmap="Reds_r",
         s=400,
         edgecolors='k',
@@ -114,7 +118,8 @@ if __name__ == "__main__":
     ax.scatter(
         merged_df.loc[highlight_mask, "f_factor"],
         merged_df.loc[highlight_mask, "pressure_bar"],
-        c=log_bayes_vals[highlight_mask],
+        c= log_bayes_vals[highlight_mask],
+        #cmap="RdBu",
         cmap="Reds_r",
         s=400,
         edgecolors='gold',
@@ -122,7 +127,7 @@ if __name__ == "__main__":
         norm=norm
     )
 
-    # Set x-ticks as fractions
+    # X-tick formatting
     factors = sorted(set(redistribution_modes.values()))
     fraction_labels = {
         2/3: r"$\dfrac{2}{3}$" + "\nDayside",
@@ -134,19 +139,23 @@ if __name__ == "__main__":
     ax.set_xticks(factors)
     ax.set_xticklabels([fraction_labels[f] for f in factors])
 
+    # Axis settings
     ax.set_xlabel("$f$ factor (redistribution)", fontsize=16)
-    ax.set_ylabel("CO$_2$ pressure (bar)", fontsize=16)
+    ax.set_ylabel("H$_2$O pressure (bar)", fontsize=16)
     ax.set_yscale("log")
-    ax.set_title("CO$_2$", fontsize=20)
+    ax.set_title("H$_2$O", fontsize=20)
     ax.grid(True, alpha=0.3)
 
+    # Colorbar
     cbar = plt.colorbar(scatter, ax=ax)
     cbar.set_label("Bayes factor w.r.t. pyrite (log scale)", fontsize=14)
+    #cbar.set_ticks([0.25, 0.5, 0.75, 1, 1.5, 2, 2.5, 3])
     cbar.ax.tick_params(labelsize=11)
 
     plt.tight_layout()
-    plot_path = os.path.join(OUTPUT_DIR, planet, f"{planet}_bayes_comparison_plot_CO2.pdf")
+    plot_path = os.path.join(OUTPUT_DIR, planet, f"{planet}_bayes_comparison_plot_H2O.pdf")
     plt.savefig(plot_path, format = 'pdf', dpi=300)
     print(f"\n[INFO] Plot saved to {plot_path}")
 
     plt.show()
+

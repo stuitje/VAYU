@@ -11,7 +11,7 @@ from matplotlib.legend_handler import HandlerBase
 from src.dataloader import load_agni_output, get_planet_data
 from src.utils import planck, compute_dayside_brightness_temperature, contrast_ppm
 from src import constants as c
-from src.emission_miri import get_throughput, compute_snr, integrate_flux, load_stellar_flux
+from src.emission_miri import get_throughput, compute_snr, integrate_flux
 
 # --- Custom legend handler to overlay grey line on color patch ---
 class HandlerLineOnPatch(HandlerBase):
@@ -46,7 +46,7 @@ def load_config():
     return config
 
 def load_star_flux(wave_um, config, d_au):
-    path = os.path.join(config["stellar_spectra_dir"], "gj367_SPHINX.txt")
+    path = os.path.join(config["stellar_spectra_dir"], "trappist-1_SPHINX.txt")
     data = np.loadtxt(path, comments="#")
     wl_nm, flux_erg = data[:, 0], data[:, 1]
     flux = np.interp(wave_um, wl_nm / 1000.0, flux_erg) * (1.0 / d_au)**2
@@ -151,11 +151,14 @@ def plot_emission(df, planet, wave_um, T_star, T_planet, Rp_m, Rs_m, throughputs
     plt.subplots_adjust(bottom=0.4)
     out_dir = os.path.join("out", planet, "emissions")
     os.makedirs(out_dir, exist_ok=True)
-    fig.savefig(os.path.join(out_dir, "surface_emissions_only.pdf"), format = 'pdf', dpi=300)
-    print(f"Saved emission plot to {out_dir}")
+
+    outfile = os.path.join(out_dir, "surface_emissions_only.pdf")
+    fig.savefig(outfile, format='pdf', dpi=300)
+
+    print(f"Saved emission plot to {os.path.abspath(outfile)}")
 
 def main():
-    planet, atmosphere = "gj367b", "bare_rock"
+    planet, atmosphere = "trappist-1c", "bare_rock"
     wave_um = np.linspace(10.0, 20.0, 1000)
     config = load_config()
 
@@ -174,12 +177,7 @@ def main():
         "F1500W": get_throughput(wave_um, "f1500w")
     }
 
-
-    path = os.path.join(config["stellar_spectra_dir"], "gj367_SPHINX.txt")
-    star_flux = load_stellar_flux(path, wave_um)
-    star_flux *= (1.0 / d_au)**2  # to earth distance
-   
-
+    star_flux, _ = load_star_flux(wave_um, config, d_au)
 
     results = []
     for srf in surface_labels.keys():
@@ -190,7 +188,7 @@ def main():
     df = pd.DataFrame(results).sort_values("F1280W")
 
     if planet != "trappist-1c":
-        scale = 3.125# From Trappist-1c observation 
+        scale = 1/0.2087 # From Trappist-1c observation 
         print(f"Scaling uncertainties by {scale}")
         for f in ["F1280W", "F1500W"]:
             df[f"{f}_uncert"] *= scale 
