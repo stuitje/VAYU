@@ -1,0 +1,19 @@
+# VAYU: Bayesian model comparison of rocky exoplanet emission spectra
+# Python 3.10+ recommended
+
+# Core scientific stack
+numpy>=2.0          # np.trapezoid used (added in 2.0)
+pandas>=2.0
+scipy>=1.10
+matplotlib>=3.7
+
+# Configuration and I/O
+toml>=0.10
+netCDF4>=1.6        # AGNI output files
+
+# Bayesian nested sampling
+dynesty>=2.1
+
+# JWST MIRI throughput (optional; only needed for src/throughput.py and src/emission_miri.py)
+# Requires STScI CDBS data files separately — see https://pandeia.stsci.edu/installation
+pandeia.engine>=2024.6
