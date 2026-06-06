@@ -174,7 +174,7 @@ def load_model_contrasts(planet: str, mode: str, fixed_key: str, varying_keys: I
     return contrasts, bandcenter
 
 
-# ---------- Plotting ----------
+# Plotting
 
 def _categorise(delta_lnZ: dict,
                 accept_threshold: float,
@@ -255,7 +255,7 @@ def plot_contrasts(
 
     accepted, intermediate, rejected = _categorise(delta_lnZ, accept_threshold, intermediate_threshold)
 
-    # ---------- Plot ----------
+    # Plot
     fig, ax = plt.subplots(figsize=(12, 6))
     bold_font   = FontProperties(weight="bold",   size=14)
     normal_font = FontProperties(weight="normal", size=14)
