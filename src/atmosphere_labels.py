@@ -109,4 +109,21 @@ atmosphere_labels = {
  '1bar_N2_1ppm_CO' : '1 bar N$_2$ + 1 ppm CO',
  
  'bare_rock': 'Bare rock',
- 'earth_like': '1 bar N$_2$ + 400 ppm CO$_2$'}
+ 'earth_like': '1 bar N$_2$ + 400 ppm CO$_2$',
+ 
+ '001bar_N2_H2O_O3_case3' : "0.01 bar N$_2$ + 30 % H$_2$O + 1000 ppm O$_3$",
+ '01bar_N2_H2O_O3_case3' : "0.1 bar N$_2$ + 30 % H$_2$O + 1000 ppm O$_3$",
+ '1bar_N2_H2O_O3_case3' : "1 bar N$_2$ + 30 % H$_2$O + 1000 ppm O$_3$",
+ '10bar_N2_H2O_O3_case3' : "10 bar N$_2$ + 30 % H$_2$O + 1000 ppm O$_3$",
+ '100bar_N2_H2O_O3_case3' : "100 bar N$_2$ + 30 % H$_2$O + 1000 ppm O$_3$",
+ '001bar_N2_H2O_O3_case4' : "0.01 bar N$_2$ + 30 % H$_2$O + 100 ppm O$_3$",
+ '01bar_N2_H2O_O3_case4' : "0.1 bar N$_2$ + 30 % H$_2$O + 100 ppm O$_3$",
+ '1bar_N2_H2O_O3_case4' : "1 bar N$_2$ + 30 % H$_2$O + 100 ppm O$_3$",
+ '10bar_N2_H2O_O3_case4' : "10 bar N$_2$ + 30 % H$_2$O + 100 ppm O$_3$",
+ '100bar_N2_H2O_O3_case4' : "100 bar N$_2$ + 30 % H$_2$O + 100 ppm O$_3$",
+ '100bar_H2O_O3_case2' : "100 bar H$_2$O + 1000 ppm O$_3$",
+ '10bar_H2O_O3_case2' : "10 bar H$_2$O + 1000 ppm O$_3$",
+ '1bar_H2O_O3_case2' : "1  bar H$_2$O + 1000 ppm O$_3$",
+ '01bar_H2O_O3_case2' : "0.1 bar H$_2$O + 1000 ppm O$_3$"
+
+}
