@@ -5,10 +5,8 @@ surfaces = [
     "basalt_large",
     "basalt_small",
     "basalt_tuff",
-    "basalts_lab",
     "diorite",
     "gabbro",
-    "gabbro2",
     "granite",
     "greybody",
     "harzburgite",
@@ -19,8 +17,6 @@ surfaces = [
     "magnesium_sulphate",
     "mars_basalticshergottite",
     "mars_breccia",
-    "mars_meteorite",
-    "mgso4",
     "norite",
     "phonolite",
     "pyrite",
@@ -31,8 +27,4 @@ surfaces = [
     "trachy_andesite",
     "trachy_basalt",
     "trachyte",
-    "ultramafic"
-]
-
-
-
+    "ultramafic" ]
