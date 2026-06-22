@@ -117,13 +117,6 @@ def contrast_ppm(
                                bounds_error=True)
         star_flux = interp_func(wavelength_nm)
 
-        # Rescale stellar flux to correct stellar temperature 
-        if rescale:
-            flux_bb_actual = planck(wavelength_nm, T_spectrum) 
-            flux_bb_target = planck(wavelength_nm, T_star) 
-            bb_scale = flux_bb_target / flux_bb_actual  # element-wise
-            star_flux *= 1 #bb_scale
-
     else:
         # Assume it's already a flux array matching wavelength_nm
         star_flux = np.array(stellar_spectrum)
@@ -142,30 +135,6 @@ def contrast_ppm(
     contrast = (planet_flux / star_flux) * radius_ratio_sq * 1e6  # Convert to ppm
     return contrast
 
-def compute_equilibrium_temperature(
-    stellar_luminosity: float,
-    distance_au: float,
-    bond_albedo: float = 0.0,
-    redistribution_factor: float = 0.5  # 1.0 = full redistribution, 0.5 = dayside only
-) -> float:
-    """
-    Compute equilibrium temperature with heat redistribution.
-
-    Args:
-        stellar_luminosity: log10(L / L_sun)
-        distance_au: orbital distance [au]
-        bond_albedo: fraction of light reflected
-        redistribution_factor: fractional emitting area 
-
-    Returns:
-        Equilibrium temperature [K]
-    """
-    L_star = 10**stellar_luminosity * l_sun
-    d_m = distance_au * au
-
-    T_eq = ((1 - bond_albedo) * L_star / (16 * np.pi * stefan_boltzmann * d_m**2 * redistribution_factor))**0.25
-    return T_eq
-
 def compute_dayside_brightness_temperature(
     stellar_temperature: float,
     stellar_radius_rsun: float,
@@ -181,7 +150,7 @@ def compute_dayside_brightness_temperature(
         stellar_radius_rsun: Stellar radius in solar radii [R_sun]
         distance_au: Orbital distance [AU]
         bond_albedo: Bond albedo of the planet (0 to 1)
-        redistribution_factor: f, where 1 is no redistribution, 1/4 is full redistribution
+        redistribution_factor: f, where 2/3 is no redistribution, 1/4 is full redistribution
 
     Returns:
         Dayside brightness temperature [K]
