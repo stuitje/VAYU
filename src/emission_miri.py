@@ -68,8 +68,8 @@ def jwst_background(wave_um):
 
 # SNR
 def compute_snr(wave_um, model_flux, star_flux, throughput,
-                tint_s  = 42 * 60       # eclipse duration from Zieba et al.
-                nout    = 150 / 42      # out-of-eclipse / in-eclipse time ratio from Zieba et al.
+                tint_s  = 42 * 60 ,      # eclipse duration from Zieba et al.
+                nout    = 150 / 42 ,     # out-of-eclipse / in-eclipse time ratio from Zieba et al.
                 atel=c.jwst_collecting_area,
                 thermal=True, n_eclipses=4):
     
