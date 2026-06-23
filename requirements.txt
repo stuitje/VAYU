@@ -16,4 +16,4 @@ dynesty>=2.1
 
 # JWST MIRI throughput (optional; only needed for src/throughput.py and src/emission_miri.py)
 # Requires STScI CDBS data files separately — see https://pandeia.stsci.edu/installation
-pandeia.engine>=2024.6
+pandeia.engine==2025.3
