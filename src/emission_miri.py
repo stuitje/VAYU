@@ -68,7 +68,9 @@ def jwst_background(wave_um):
 
 # SNR
 def compute_snr(wave_um, model_flux, star_flux, throughput,
-                tint_s=36.4*60, nout=4.0, atel=c.jwst_collecting_area,
+                tint_s  = 42 * 60       # eclipse duration from Zieba et al.
+                nout    = 150 / 42      # out-of-eclipse / in-eclipse time ratio from Zieba et al.
+                atel=c.jwst_collecting_area,
                 thermal=True, n_eclipses=4):
     
     tint_total = tint_s * n_eclipses
@@ -97,7 +99,7 @@ def compute_snr(wave_um, model_flux, star_flux, throughput,
     }
 
 def integrate_flux(wave_um, flux, throughput):
-    return np.trapz(flux * throughput, wave_um)
+    return np.trapezoid(flux * throughput, wave_um)
 
 def compute_relative_emissions(nc_path, T_planet, wave_um, throughputs, star_flux, Rp_m, d_m, n_eclipses=4):
     data = load_agni_output(nc_path)
