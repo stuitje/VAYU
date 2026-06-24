@@ -145,6 +145,7 @@ def plot_emission(df, planet, scaling_factor):
 
     ax.axhline(1.0, linestyle="--", color="black", zorder=0)
     ax.set_xlim(-0.5, len(df) - 0.5)
+    ax.set_ylim(0.4, 1.1)
     ax.set_xticks(x)
     ax.set_xticklabels(
         df["Surface"].map(surface_labels).fillna(df["Surface"]),
